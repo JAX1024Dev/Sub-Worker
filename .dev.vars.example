@@ -1,0 +1,4 @@
+# Copy to .dev.vars and replace with the real HTTPS 3x-ui subscription base URL.
+THREE_X_UI_SUB_BASE_URL="https://subscription.example.invalid/sub/"
+# Only used by the explicitly invoked live E2E test.
+LIVE_TEST_SUBSCRIPTION_ID="example-subscription-id"

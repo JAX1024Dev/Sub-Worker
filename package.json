@@ -1,0 +1,50 @@
+{
+  "name": "sub-worker",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Convert 3x-ui subscriptions into platform-specific sing-box configurations.",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration --passWithNoTests",
+    "test:config": "pnpm fixtures:check && node scripts/validate-generated-configs.mjs",
+    "test:rulesets": "tsx scripts/verify-rule-sets.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e:config": "tsx scripts/check-live-subscription.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p tsconfig.node.json",
+    "cf:typegen": "wrangler types",
+    "fixtures:generate": "tsx scripts/generate-fixtures.ts",
+    "fixtures:check": "tsx scripts/check-fixtures.ts",
+    "config:export": "tsx scripts/export-live-config.ts",
+    "build": "pnpm typecheck && wrangler deploy --dry-run --outdir dist --env=\"\"",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm test:config && pnpm build",
+    "release:check": "pnpm check && pnpm test:rulesets && pnpm test:e2e && pnpm test:e2e:config && pnpm audit --audit-level high",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.1.6",
+    "@types/node": "26.5.0",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.12.0",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.0",
+    "tsx": "4.23.13",
+    "vitest": "4.1.11",
+    "wrangler": "4.130.0"
+  }
+}

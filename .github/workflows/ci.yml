@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install sing-box 1.14.0
+        env:
+          ARCHIVE_SHA256: 2375de6999f4f56ab46b4fc5ddf26a6aba1d3e61a0f4e7ddec2f4690457d5f63
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/SagerNet/sing-box/releases/download/v1.14.0/sing-box-1.14.0-linux-amd64.tar.gz \
+            --output "$RUNNER_TEMP/sing-box.tar.gz"
+          echo "$ARCHIVE_SHA256  $RUNNER_TEMP/sing-box.tar.gz" | sha256sum --check
+          tar --extract --gzip --file "$RUNNER_TEMP/sing-box.tar.gz" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/sing-box-1.14.0-linux-amd64" >> "$GITHUB_PATH"
+      - run: pnpm check
+      - run: pnpm test:rulesets
+      - run: pnpm audit --audit-level high

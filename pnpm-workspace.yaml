@@ -1,0 +1,27 @@
+allowBuilds:
+  esbuild: true
+  workerd: true
+overrides:
+  sharp: 0.35.4
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types@5.20260908.1'
+  - '@typescript-eslint/eslint-plugin@8.70.0'
+  - '@typescript-eslint/parser@8.70.0'
+  - '@typescript-eslint/project-service@8.70.0'
+  - '@typescript-eslint/scope-manager@8.70.0'
+  - '@typescript-eslint/tsconfig-utils@8.70.0'
+  - '@typescript-eslint/type-utils@8.70.0'
+  - '@typescript-eslint/types@8.70.0'
+  - '@typescript-eslint/typescript-estree@8.70.0'
+  - '@typescript-eslint/utils@8.70.0'
+  - '@typescript-eslint/visitor-keys@8.70.0'
+  - typescript-eslint@8.70.0
+  - '@cloudflare/vitest-plugin@1.1.6'
+  - '@cloudflare/workerd-darwin-64@1.20260908.1'
+  - '@cloudflare/workerd-darwin-arm64@1.20260908.1'
+  - '@cloudflare/workerd-linux-64@1.20260908.1'
+  - '@cloudflare/workerd-linux-arm64@1.20260908.1'
+  - '@cloudflare/workerd-windows-64@1.20260908.1'
+  - miniflare@5.20260908.0-alpha
+  - workerd@1.20260908.1
+  - wrangler@4.130.0
