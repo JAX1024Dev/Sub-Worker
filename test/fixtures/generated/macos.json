@@ -50,7 +50,7 @@
       "server": "node.example.invalid",
       "server_port": 443,
       "uuid": "01234567-89ab-cdef-0123-456789abcdef",
-      "network": "tcp",
+      "packet_encoding": "xudp",
       "flow": "xtls-rprx-vision",
       "domain_resolver": "dns-cn",
       "tls": {

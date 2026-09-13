@@ -65,6 +65,7 @@ MVP 只接受：
 
 - 公共日志和入站配置。
 - VLESS + REALITY 节点 outbounds。
+- VLESS TCP transport 节点同时承载 TCP 与 UDP，UDP 使用 XUDP 编码。
 - 手动 `selector` 和自动 `urltest`，默认使用自动选择组。
 - 按平台应用的 TUN Overlay。
 - [DNS 生成规格](./DNS.md)。
@@ -100,7 +101,7 @@ MVP 只接受：
 - `GET /v1/sing-box/{clientType}/{subscriptionId}`。
 - 五个已确认的客户端目标。
 - sing-box 1.14.0。
-- VLESS + REALITY + TCP/XTLS Vision 基线。
+- VLESS + REALITY + TCP/XTLS Vision transport 基线，并支持 TCP/UDP 代理流量。
 - 独立定义的 DNS 与国内外路由策略。
 - 不缓存订阅或转换结果。
 - 输入限制、上游安全、日志脱敏和速率限制。

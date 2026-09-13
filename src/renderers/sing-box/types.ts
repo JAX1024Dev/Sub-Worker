@@ -75,7 +75,7 @@ export interface VlessOutbound {
   server: string;
   server_port: number;
   uuid: string;
-  network: 'tcp';
+  packet_encoding: 'xudp';
   flow?: 'xtls-rprx-vision';
   domain_resolver?: string;
   tls: {

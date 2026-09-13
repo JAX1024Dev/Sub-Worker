@@ -41,7 +41,7 @@ function renderNode(node: CanonicalNode, tag: string): VlessOutbound {
     server: node.server,
     server_port: node.serverPort,
     uuid: node.uuid,
-    network: node.network,
+    packet_encoding: 'xudp',
     ...(node.flow === undefined ? {} : { flow: node.flow }),
     ...(isIpAddress(node.server) ? {} : { domain_resolver: singBoxTags.dnsChina }),
     tls: {

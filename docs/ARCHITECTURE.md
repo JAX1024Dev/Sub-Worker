@@ -100,6 +100,9 @@ common + outbounds + dns + rules + platform overlay
 - 将 `CanonicalNode[]` 转换为 sing-box 1.14.0 outbounds。
 - 生成 `direct`、`block`、`urltest` 和名为 `proxy` 的 selector。
 - 域名形式的节点按 [DNS.md](./DNS.md) 设置 domain resolver。
+- CanonicalNode 的 `network = tcp` 表示上游 transport，不映射为 sing-box outbound 的
+  TCP-only `network` 限制。
+- VLESS 节点不生成 `network`，允许 TCP 与 UDP，并显式使用 `packet_encoding = xudp`。
 - 不生成 DNS、route 或 TUN 字段。
 
 ### DNS Generator
@@ -228,6 +231,8 @@ ConversionSummary {
 ```
 
 `sourceId` 在 MVP 中为固定内部值，为未来多上游保留。
+`CanonicalNode.network` 描述分享链接的 transport；目标 renderer 不得将其直接解释为
+允许代理的 IP 网络类型。
 
 ## 9. 依赖方向
 

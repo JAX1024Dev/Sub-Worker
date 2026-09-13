@@ -19,6 +19,7 @@ describe('sing-box renderer', () => {
 
     expect(fragment.nodeTags).toEqual(['proxy (2)', 'proxy (3)', 'IP node']);
     expect(nodes[0]).toMatchObject({
+      packet_encoding: 'xudp',
       domain_resolver: 'dns-cn',
       tls: {
         enabled: true,
@@ -26,6 +27,7 @@ describe('sing-box renderer', () => {
         utls: { enabled: true, fingerprint: 'chrome' },
       },
     });
+    expect(nodes[0]).not.toHaveProperty('network');
     expect(nodes[2]).not.toHaveProperty('domain_resolver');
   });
 

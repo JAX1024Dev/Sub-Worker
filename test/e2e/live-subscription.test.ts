@@ -25,8 +25,13 @@ describe('configured 3x-ui subscription', () => {
       route: { final: 'proxy' },
     });
 
-    if (!isRecord(config) || !isRecord(config.dns) || !isUnknownArray(config.dns.rules)) {
-      throw new Error('Expected a DNS rules array.');
+    if (
+      !isRecord(config) ||
+      !isRecord(config.dns) ||
+      !isUnknownArray(config.dns.rules) ||
+      !isUnknownArray(config.outbounds)
+    ) {
+      throw new Error('Expected DNS rules and outbounds arrays.');
     }
     if (!isRecord(config.route) || !isUnknownArray(config.route.rules)) {
       throw new Error('Expected a route rules array.');
@@ -43,5 +48,15 @@ describe('configured 3x-ui subscription', () => {
       action: 'route',
       outbound: 'proxy',
     });
+
+    const nodeOutbounds = config.outbounds.filter(
+      (outbound): outbound is Record<string, unknown> =>
+        isRecord(outbound) && outbound.type === 'vless',
+    );
+    expect(nodeOutbounds.length).toBeGreaterThan(0);
+    for (const outbound of nodeOutbounds) {
+      expect(outbound.packet_encoding).toBe('xudp');
+      expect(outbound).not.toHaveProperty('network');
+    }
   });
 });
