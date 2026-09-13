@@ -9,8 +9,8 @@ export function composeSingBoxConfig(
   nodes: CanonicalNode[],
   clientType: ClientType,
 ): SingBoxConfig {
-  const dns = generateDns();
-  const routing = generateRules();
+  const dns = generateDns(clientType);
+  const routing = generateRules(clientType);
   const platform = generatePlatformOverlay(clientType);
   const outbounds = generateOutbounds(nodes);
 

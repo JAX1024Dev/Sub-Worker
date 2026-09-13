@@ -112,9 +112,11 @@ action: route → proxy
 match: unconditional non-final rule
 action: resolve
 server: omitted
+strategy: ipv4_only # 仅 iOS；其他平台省略
 ```
 
 不指定 server，使域名目标进入 [DNS.md](./DNS.md) 定义的 DNS rules；IP 目标不需要解析。该 action 是 non-final，处理后继续匹配后续 IP 规则。
+iOS 显式使用 `ipv4_only`，与 DNS 模块的 AAAA 拒绝策略形成纵深保护，避免未分类域名解析为不可直连的 IPv6。
 
 ### R7：解析后的私网目标直连
 
@@ -156,6 +158,7 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
 - macOS、Windows、Linux core：`route.auto_detect_interface = true`，避免 TUN 回环。
 - Android 官方客户端：平台 Overlay 决定 `override_android_vpn`，MVP 默认 false。
 - iOS：不生成仅桌面平台支持的 interface 选项。
+- iOS：R6 使用 `ipv4_only`；其他平台保持默认解析策略。
 - 平台差异只能调整 route 级系统集成字段，不能改变 R1–R8 的业务语义。
 
 ## 7. 输出契约
@@ -163,7 +166,7 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
 路由生成器输出：
 
 ```text
-RoutingFragment {
+generateRules(clientType: ClientType) -> RoutingFragment {
   http_clients: HttpClient[]
   route: {
     rules: RouteRule[]
@@ -195,6 +198,7 @@ RoutingFragment {
 - 直接 CN IP → direct。
 - 私网 IP 和解析到私网的域名 → direct。
 - 未分类域名和非 CN IP → proxy。
+- iOS R6 使用 `ipv4_only`，其他平台的 R6 不携带 `strategy`。
 - DNS 请求 → `hijack-dns`。
 - 规则集均使用固定 URL 和显式 HTTP client。
 - 五个平台输出通过 sing-box 1.14.0 `check`。

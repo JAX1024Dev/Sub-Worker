@@ -1,5 +1,6 @@
 import { singBoxTags } from '../../renderers/sing-box/tags';
-import type { DnsConfig } from '../../renderers/sing-box/types';
+import type { ClientType } from '../../domain/canonical-node';
+import type { DnsConfig, DnsRule } from '../../renderers/sing-box/types';
 
 export interface DnsFragment {
   dns: DnsConfig;
@@ -14,7 +15,23 @@ export interface DnsFragment {
   };
 }
 
-export function generateDns(): DnsFragment {
+export function generateDns(clientType: ClientType): DnsFragment {
+  const forceIpv4 = clientType === 'ios';
+  const rules: DnsRule[] = [];
+
+  if (forceIpv4) {
+    rules.push({ query_type: ['AAAA'], action: 'reject', no_drop: true });
+  }
+
+  rules.push(
+    {
+      rule_set: singBoxTags.ruleSetGeositeChina,
+      action: 'route',
+      server: singBoxTags.dnsChina,
+    },
+    { action: 'route', server: singBoxTags.dnsGlobal },
+  );
+
   return {
     dns: {
       servers: [
@@ -36,16 +53,9 @@ export function generateDns(): DnsFragment {
           detour: singBoxTags.proxy,
         },
       ],
-      rules: [
-        {
-          rule_set: singBoxTags.ruleSetGeositeChina,
-          action: 'route',
-          server: singBoxTags.dnsChina,
-        },
-        { action: 'route', server: singBoxTags.dnsGlobal },
-      ],
+      rules,
       final: singBoxTags.dnsGlobal,
-      strategy: 'prefer_ipv4',
+      strategy: forceIpv4 ? 'ipv4_only' : 'prefer_ipv4',
       disable_cache: false,
       optimistic: false,
       timeout: '5s',

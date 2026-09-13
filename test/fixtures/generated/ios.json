@@ -22,11 +22,12 @@
       }
     ],
     "rules": [
+      { "query_type": ["AAAA"], "action": "reject", "no_drop": true },
       { "rule_set": "geosite-cn", "action": "route", "server": "dns-cn" },
       { "action": "route", "server": "dns-global" }
     ],
     "final": "dns-global",
-    "strategy": "prefer_ipv4",
+    "strategy": "ipv4_only",
     "disable_cache": false,
     "optimistic": false,
     "timeout": "5s"
@@ -88,7 +89,7 @@
       { "ip_is_private": true, "action": "route", "outbound": "direct" },
       { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
       { "rule_set": "geosite-non-cn", "action": "route", "outbound": "proxy" },
-      { "action": "resolve" },
+      { "action": "resolve", "strategy": "ipv4_only" },
       { "ip_is_private": true, "action": "route", "outbound": "direct" },
       { "rule_set": "geoip-cn", "action": "route", "outbound": "direct" }
     ],

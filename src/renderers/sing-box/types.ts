@@ -15,7 +15,7 @@ export interface DnsConfig {
   servers: DnsServer[];
   rules: DnsRule[];
   final: string;
-  strategy: 'prefer_ipv4';
+  strategy: 'prefer_ipv4' | 'ipv4_only';
   disable_cache: false;
   optimistic: false;
   timeout: '5s';
@@ -35,7 +35,9 @@ export interface DnsServer {
 }
 
 export type DnsRule =
-  { rule_set: string; action: 'route'; server: string } | { action: 'route'; server: string };
+  | { query_type: ['AAAA']; action: 'reject'; no_drop: true }
+  | { rule_set: string; action: 'route'; server: string }
+  | { action: 'route'; server: string };
 
 export interface HttpClient {
   tag: string;
@@ -96,7 +98,7 @@ export type RouteRule =
   | { protocol: 'dns'; action: 'hijack-dns' }
   | { ip_is_private: true; action: 'route'; outbound: string }
   | { rule_set: string; action: 'route'; outbound: string }
-  | { action: 'resolve' };
+  | { action: 'resolve'; strategy?: 'ipv4_only' };
 
 export interface RemoteRuleSet {
   type: 'remote';

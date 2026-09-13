@@ -2,6 +2,7 @@
 
 - 状态：已接受
 - 日期：2026-09-08
+- 修订：2026-09-13
 
 ## 背景
 
@@ -14,6 +15,9 @@
 - 域名形式的代理服务器使用 AliDNS DoH bootstrap。
 - 普通查询不配置系统或明文 DNS fallback。
 - 保留进程内 DNS 缓存，不持久化 DNS 缓存，不启用 optimistic cache。
+- iOS 使用 `ipv4_only` 并拒绝 AAAA 查询，避免官方图形客户端的 Packet Tunnel
+  将国内 IPv6 交给无可用 IPv6 路由的 direct 出站；其他平台保持 `prefer_ipv4`。
+- iOS 路由中的 `resolve` action 同样使用 `ipv4_only`，防止未分类域名绕过该平台策略。
 - 完整生成规格以 [DNS.md](../DNS.md) 为准。
 
 ## 后果
@@ -21,6 +25,9 @@
 - 国内解析延迟较低，其他域名的解析与代理出口保持一致。
 - 境外 DoH 或代理不可用时，国外域名解析失败而不会静默改变 resolver。
 - AliDNS 和 Cloudflare 成为外部运行依赖。
+- iOS 普通 DNS 查询不再向应用提供 IPv6 地址；应用直接访问 IPv6 字面量仍不在该策略
+  的处理范围。需要恢复原生 IPv6 时，必须先验证 Packet Tunnel 的 direct IPv6 出口，
+  并重新评估“IPv6 经代理”方案。
 - 更换 provider 或 fallback 语义需要更新本 ADR。
 
 ## 被否决方案

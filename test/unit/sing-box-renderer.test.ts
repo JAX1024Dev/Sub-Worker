@@ -30,7 +30,7 @@ describe('sing-box renderer', () => {
   });
 
   it('generates the specified encrypted DNS policy', () => {
-    expect(generateDns().dns).toEqual({
+    expect(generateDns('macos').dns).toEqual({
       servers: [
         {
           type: 'https',
@@ -60,11 +60,18 @@ describe('sing-box renderer', () => {
       optimistic: false,
       timeout: '5s',
     });
-    expect(generateDns().dns.servers[0]).not.toHaveProperty('detour');
+    expect(generateDns('macos').dns.servers[0]).not.toHaveProperty('detour');
+  });
+
+  it('forces IPv4 DNS answers for iOS to avoid unreachable direct IPv6 routes', () => {
+    const dns = generateDns('ios').dns;
+
+    expect(dns.strategy).toBe('ipv4_only');
+    expect(dns.rules[0]).toEqual({ query_type: ['AAAA'], action: 'reject', no_drop: true });
   });
 
   it('preserves the R1-R8 route order and uses pinned rule sets', () => {
-    const routing = generateRules();
+    const routing = generateRules('macos');
     expect(routing.route.rules).toEqual([
       { action: 'sniff' },
       { protocol: 'dns', action: 'hijack-dns' },
@@ -83,6 +90,13 @@ describe('sing-box renderer', () => {
       expect(source.sha256).toMatch(/^[0-9a-f]{64}$/);
       expect(source.url).toContain(source.revision);
     }
+  });
+
+  it('forces unresolved iOS route destinations to resolve as IPv4', () => {
+    expect(generateRules('ios').route.rules).toContainEqual({
+      action: 'resolve',
+      strategy: 'ipv4_only',
+    });
   });
 
   it.each(clientTypes)('composes the %s platform without deprecated fields', (clientType) => {
@@ -118,6 +132,24 @@ describe('sing-box renderer', () => {
     if (clientType === 'ios') {
       expect(config.route).not.toHaveProperty('auto_detect_interface');
       expect(config.route).not.toHaveProperty('override_android_vpn');
+      expect(config.dns.strategy).toBe('ipv4_only');
+      expect(config.dns.rules[0]).toEqual({
+        query_type: ['AAAA'],
+        action: 'reject',
+        no_drop: true,
+      });
+      expect(config.route.rules).toContainEqual({
+        action: 'resolve',
+        strategy: 'ipv4_only',
+      });
+    } else {
+      expect(config.dns.strategy).toBe('prefer_ipv4');
+      expect(config.dns.rules).not.toContainEqual({
+        query_type: ['AAAA'],
+        action: 'reject',
+        no_drop: true,
+      });
+      expect(config.route.rules).toContainEqual({ action: 'resolve' });
     }
 
     expect(serialized).not.toContain('download_detour');
