@@ -93,10 +93,19 @@ describe('sing-box renderer', () => {
   });
 
   it('forces unresolved iOS route destinations to resolve as IPv4', () => {
-    expect(generateRules('ios').route.rules).toContainEqual({
+    const rules = generateRules('ios').route.rules;
+
+    expect(rules).toContainEqual({
       action: 'resolve',
       strategy: 'ipv4_only',
     });
+    expect(rules.slice(0, 5)).toEqual([
+      { action: 'sniff' },
+      { protocol: 'dns', action: 'hijack-dns' },
+      { ip_is_private: true, action: 'route', outbound: 'direct' },
+      { ip_version: 6, action: 'route', outbound: 'proxy' },
+      { rule_set: 'geosite-cn', action: 'route', outbound: 'direct' },
+    ]);
   });
 
   it.each(clientTypes)('composes the %s platform without deprecated fields', (clientType) => {
@@ -142,6 +151,11 @@ describe('sing-box renderer', () => {
         action: 'resolve',
         strategy: 'ipv4_only',
       });
+      expect(config.route.rules).toContainEqual({
+        ip_version: 6,
+        action: 'route',
+        outbound: 'proxy',
+      });
     } else {
       expect(config.dns.strategy).toBe('prefer_ipv4');
       expect(config.dns.rules).not.toContainEqual({
@@ -150,6 +164,11 @@ describe('sing-box renderer', () => {
         no_drop: true,
       });
       expect(config.route.rules).toContainEqual({ action: 'resolve' });
+      expect(config.route.rules).not.toContainEqual({
+        ip_version: 6,
+        action: 'route',
+        outbound: 'proxy',
+      });
     }
 
     expect(serialized).not.toContain('download_detour');

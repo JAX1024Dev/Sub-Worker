@@ -90,6 +90,20 @@ action: route → direct
 
 处理请求进入路由阶段时已经是 IP 的私网、回环和链路本地目标。
 
+### I1：iOS 公网 IPv6 代理保护
+
+仅当 `clientType = ios` 时，在 R3 之后生成：
+
+```text
+match: ip_version = 6
+action: route → proxy
+```
+
+该规则必须位于 R3 之后、R4 之前。私网 IPv6 仍由 R3 直连；其余公网 IPv6
+（包括应用预解析、缓存或直接使用的 IPv6 地址）必须经代理，避免 iOS Packet Tunnel
+的 direct 出站在没有可用 IPv6 路由时返回 `no route to host`。代理服务器必须具备
+访问目标 IPv6 的能力。
+
 ### R4：中国域名直连
 
 ```text
@@ -159,7 +173,9 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
 - Android 官方客户端：平台 Overlay 决定 `override_android_vpn`，MVP 默认 false。
 - iOS：不生成仅桌面平台支持的 interface 选项。
 - iOS：R6 使用 `ipv4_only`；其他平台保持默认解析策略。
-- 平台差异只能调整 route 级系统集成字段，不能改变 R1–R8 的业务语义。
+- iOS：在 R3 与 R4 之间插入 I1，将公网 IPv6 交给 proxy。
+- 除已记录的 I1 外，平台差异只能调整 route 级系统集成字段，不能改变 R1–R8
+  的业务语义。
 
 ## 7. 输出契约
 
@@ -199,6 +215,7 @@ generateRules(clientType: ClientType) -> RoutingFragment {
 - 私网 IP 和解析到私网的域名 → direct。
 - 未分类域名和非 CN IP → proxy。
 - iOS R6 使用 `ipv4_only`，其他平台的 R6 不携带 `strategy`。
+- iOS 公网 IPv6 → proxy，私网 IPv6 → direct；其他平台不生成 I1。
 - DNS 请求 → `hijack-dns`。
 - 规则集均使用固定 URL 和显式 HTTP client。
 - 五个平台输出通过 sing-box 1.14.0 `check`。

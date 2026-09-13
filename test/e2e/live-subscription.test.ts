@@ -38,5 +38,10 @@ describe('configured 3x-ui subscription', () => {
       no_drop: true,
     });
     expect(config.route.rules).toContainEqual({ action: 'resolve', strategy: 'ipv4_only' });
+    expect(config.route.rules).toContainEqual({
+      ip_version: 6,
+      action: 'route',
+      outbound: 'proxy',
+    });
   });
 });

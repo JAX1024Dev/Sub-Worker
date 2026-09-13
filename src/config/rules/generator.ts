@@ -1,6 +1,11 @@
 import { singBoxTags } from '../../renderers/sing-box/tags';
 import type { ClientType } from '../../domain/canonical-node';
-import type { HttpClient, RemoteRuleSet, RouteConfig } from '../../renderers/sing-box/types';
+import type {
+  HttpClient,
+  RemoteRuleSet,
+  RouteConfig,
+  RouteRule,
+} from '../../renderers/sing-box/types';
 import { ruleSetSources } from './rule-set-sources';
 
 export interface RoutingFragment {
@@ -19,6 +24,9 @@ function remoteRuleSet(tag: string, url: string): RemoteRuleSet {
 }
 
 export function generateRules(clientType: ClientType): RoutingFragment {
+  const platformSafetyRules: RouteRule[] =
+    clientType === 'ios' ? [{ ip_version: 6, action: 'route', outbound: singBoxTags.proxy }] : [];
+
   return {
     httpClients: [{ tag: singBoxTags.rulesHttpClient, detour: singBoxTags.proxy }],
     route: {
@@ -26,6 +34,7 @@ export function generateRules(clientType: ClientType): RoutingFragment {
         { action: 'sniff' },
         { protocol: 'dns', action: 'hijack-dns' },
         { ip_is_private: true, action: 'route', outbound: singBoxTags.direct },
+        ...platformSafetyRules,
         {
           rule_set: singBoxTags.ruleSetGeositeChina,
           action: 'route',
