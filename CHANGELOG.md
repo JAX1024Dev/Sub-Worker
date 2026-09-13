@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Prevented iOS public IPv6 destinations from entering an unavailable direct IPv6 route.
+- Enabled VLESS UDP with XUDP by removing the incorrect TCP-only outbound restriction.
+
+### Validated
+
+- Confirmed the production iOS and macOS configurations with sing-box 1.14.0 and official
+  clients, including the UDP/WebRTC regression scenario.
+
 ## [0.1.0] - 2026-09-09
 
 ### Added

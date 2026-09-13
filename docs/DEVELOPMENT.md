@@ -136,6 +136,8 @@ macOS 校验 Linux fixture 时，脚本仅在临时副本中移除 Linux 专属�
 - `pnpm test:rulesets` 实时下载固定 revision 的三个规则集并核对 SHA-256；该网络测试也不进入默认门禁。
 - 真实测试只使用专用 3x-ui 测试用户；完整 E2E 只针对 staging Worker。
 - 发布前 E2E 还应覆盖 staging 配置导入和基本连通性。
+- 修改 outbound 网络能力时，必须在官方 iOS 与 macOS 客户端验证 TCP、UDP/WebRTC
+  和订阅刷新；结果记录在对应 ADR 与 `CHANGELOG.md`。
 - 不将真实配置上传为 CI artifact。
 
 ## 7. Lint 与代码约束

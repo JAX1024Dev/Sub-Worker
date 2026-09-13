@@ -25,6 +25,11 @@ VLESS outbound 中的 `network=tcp` 则限制该 outbound 只能代理 TCP。直
 - TCP transport 本身保持不变。
 - 生成配置仍需通过 sing-box 1.14.0 检查；真实 UDP 连通性由 staging 与客户端实测验证。
 
+## 验证
+
+- staging 与 production 的 iOS、macOS 生成配置均通过 sing-box 1.14.0 检查。
+- 2026-09-13 在官方 iOS 与 macOS 客户端完成实机验收，本次 UDP/WebRTC 场景工作正常。
+
 ## 被否决方案
 
 - 将 UDP 强制直连：会绕过既有分流并可能泄漏真实网络地址。

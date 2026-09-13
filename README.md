@@ -2,7 +2,8 @@
 
 Cloudflare Worker that converts 3x-ui subscriptions into platform-specific sing-box
 1.14.0 configurations. The MVP supports VLESS Reality nodes and generates DNS, routing,
-outbound, selector, and TUN settings for iOS, Android, macOS, Windows, and Linux.
+outbound, selector, and TUN settings for iOS, Android, macOS, Windows, and Linux. VLESS
+outbounds support TCP and XUDP traffic.
 
 ## Quick start
 

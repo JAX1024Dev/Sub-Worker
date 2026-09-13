@@ -23,9 +23,9 @@ pnpm wrangler secret put THREE_X_UI_SUB_BASE_URL --env staging
 pnpm deploy:staging
 ```
 
-部署后检查 `/health`、有效订阅、无效 Subscription ID、响应缓存头，并在 iOS 官方
-客户端重新导入 staging 返回的配置。确认 Cloudflare WAF 或 Rate Limiting 已限制失败
-枚举和异常频率。
+部署后检查 `/health`、有效订阅、无效 Subscription ID、响应缓存头，并在 iOS 与
+macOS 官方客户端重新导入 staging 返回的配置。涉及 outbound 网络能力时，同时验证
+TCP 和 UDP/WebRTC。确认 Cloudflare WAF 或 Rate Limiting 已限制失败枚举和异常频率。
 
 ## Production
 
