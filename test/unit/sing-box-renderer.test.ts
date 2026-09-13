@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { generateDns } from '../../src/config/dns/generator';
+import { chinaIpv6RouteExcludes } from '../../src/config/rules/geoip-cn-ipv6';
 import { generateRules } from '../../src/config/rules/generator';
 import { ruleSetSources } from '../../src/config/rules/rule-set-sources';
 import { clientTypes } from '../../src/domain/canonical-node';
@@ -94,7 +95,7 @@ describe('sing-box renderer', () => {
     }
   });
 
-  it('forces unresolved iOS route destinations to resolve as IPv4', () => {
+  it('proxies iOS IPv6 that remains inside the TUN', () => {
     const rules = generateRules('ios').route.rules;
 
     expect(rules).toContainEqual({
@@ -108,6 +109,11 @@ describe('sing-box renderer', () => {
       { ip_version: 6, action: 'route', outbound: 'proxy' },
       { rule_set: 'geosite-cn', action: 'route', outbound: 'direct' },
     ]);
+    expect(rules).toContainEqual({
+      ip_version: 6,
+      action: 'route',
+      outbound: 'proxy',
+    });
   });
 
   it.each(clientTypes)('composes the %s platform without deprecated fields', (clientType) => {
@@ -141,7 +147,12 @@ describe('sing-box renderer', () => {
       expect(config.route.override_android_vpn).toBe(false);
     }
     if (clientType === 'ios') {
-      expect(config.route).not.toHaveProperty('auto_detect_interface');
+      expect(config.route.auto_detect_interface).toBe(true);
+      expect(tun.route_exclude_address).toEqual(chinaIpv6RouteExcludes);
+      expect(tun.route_exclude_address).toContain('2402:4e00::/32');
+      expect(tun.route_exclude_address).toContain('2402:840::/32');
+      expect(tun.route_exclude_address).toContain('2409:8000::/20');
+      expect(tun).not.toHaveProperty('route_exclude_address_set');
       expect(config.route).not.toHaveProperty('override_android_vpn');
       expect(config.dns.strategy).toBe('ipv4_only');
       expect(config.dns.rules[0]).toEqual({
@@ -159,6 +170,8 @@ describe('sing-box renderer', () => {
         outbound: 'proxy',
       });
     } else {
+      expect(tun).not.toHaveProperty('route_exclude_address');
+      expect(tun).not.toHaveProperty('route_exclude_address_set');
       expect(config.dns.strategy).toBe('prefer_ipv4');
       expect(config.dns.rules).not.toContainEqual({
         query_type: ['AAAA'],

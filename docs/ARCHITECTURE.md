@@ -121,7 +121,7 @@ common + outbounds + dns + rules + platform overlay
 
 | 平台    | 目标           | 负责内容                       |
 | ------- | -------------- | ------------------------------ |
-| iOS     | 官方图形客户端 | Apple 平台 TUN 选项            |
+| iOS     | 官方图形客户端 | Apple TUN 与显式中国 IPv6 旁路 |
 | macOS   | 官方图形客户端 | TUN 与系统路由集成             |
 | Android | 官方图形客户端 | VpnService 相关选项            |
 | Windows | sing-box core  | TUN、strict route、接口检测    |

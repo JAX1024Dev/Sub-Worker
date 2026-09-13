@@ -71,24 +71,26 @@ curl --fail-with-body \
 
 ## 5. 标准命令
 
-| 目的                     | 命令                     |
-| ------------------------ | ------------------------ |
-| 单元和集成测试           | `pnpm test`              |
-| 单元测试                 | `pnpm test:unit`         |
-| 集成测试                 | `pnpm test:integration`  |
-| 配置检查                 | `pnpm test:config`       |
-| 重新生成 golden 配置     | `pnpm fixtures:generate` |
-| 固定规则集校验           | `pnpm test:rulesets`     |
-| Staging E2E              | `pnpm test:e2e`          |
-| 真实配置 sing-box 校验   | `pnpm test:e2e:config`   |
-| Lint                     | `pnpm lint`              |
-| Lint 自动修复            | `pnpm lint:fix`          |
-| 格式检查                 | `pnpm format:check`      |
-| 格式化                   | `pnpm format`            |
-| 类型检查                 | `pnpm typecheck`         |
-| 生成 Worker binding 类型 | `pnpm cf:typegen`        |
-| 构建                     | `pnpm build`             |
-| 发布前完整门禁           | `pnpm release:check`     |
+| 目的                     | 命令                             |
+| ------------------------ | -------------------------------- |
+| 单元和集成测试           | `pnpm test`                      |
+| 单元测试                 | `pnpm test:unit`                 |
+| 集成测试                 | `pnpm test:integration`          |
+| 配置检查                 | `pnpm test:config`               |
+| 重新生成 golden 配置     | `pnpm fixtures:generate`         |
+| 固定规则集校验           | `pnpm test:rulesets`             |
+| 生成 iOS 中国 IPv6 旁路  | `pnpm rules:generate:ios-routes` |
+| 检查 iOS 旁路是否最新    | `pnpm rules:check:ios-routes`    |
+| Staging E2E              | `pnpm test:e2e`                  |
+| 真实配置 sing-box 校验   | `pnpm test:e2e:config`           |
+| Lint                     | `pnpm lint`                      |
+| Lint 自动修复            | `pnpm lint:fix`                  |
+| 格式检查                 | `pnpm format:check`              |
+| 格式化                   | `pnpm format`                    |
+| 类型检查                 | `pnpm typecheck`                 |
+| 生成 Worker binding 类型 | `pnpm cf:typegen`                |
+| 构建                     | `pnpm build`                     |
+| 发布前完整门禁           | `pnpm release:check`             |
 
 Worker 的 binding 类型通过 Wrangler 生成，不手写与配置重复的 Env 接口。
 
@@ -133,7 +135,8 @@ macOS 校验 Linux fixture 时，脚本仅在临时副本中移除 Linux 专属�
 - 该测试不属于默认 `pnpm test` 或 `pnpm check`，必须显式运行 `pnpm test:e2e`。
 - `pnpm test:e2e:config` 将实时生成 macOS 配置，在权限为 `0600` 的临时文件上执行
   sing-box 1.14.0 `check`，并在结束后删除该文件。
-- `pnpm test:rulesets` 实时下载固定 revision 的三个规则集并核对 SHA-256；该网络测试也不进入默认门禁。
+- `pnpm test:rulesets` 实时下载固定 revision 的三个规则集并核对 SHA-256，同时验证 iOS
+  显式中国 IPv6 旁路与固定 `geoip-cn` 完全一致；该网络测试也不进入默认门禁。
 - 真实测试只使用专用 3x-ui 测试用户；完整 E2E 只针对 staging Worker。
 - 发布前 E2E 还应覆盖 staging 配置导入和基本连通性。
 - 修改 outbound 网络能力时，必须在官方 iOS 与 macOS 客户端验证 TCP、UDP/WebRTC

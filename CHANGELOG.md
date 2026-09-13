@@ -8,11 +8,16 @@ All notable changes to this project will be documented in this file.
 
 - Prevented iOS public IPv6 destinations from entering an unavailable direct IPv6 route.
 - Enabled VLESS UDP with XUDP by removing the incorrect TCP-only outbound restriction.
+- Replaced the ineffective iOS `route_exclude_address_set` with generated explicit China IPv6
+  exclusions. This prevents domestic IPv4 and IPv6 requests in one app session from using
+  different geographic exits.
 
 ### Validated
 
 - Confirmed the production iOS and macOS configurations with sing-box 1.14.0 and official
   clients, including the UDP/WebRTC regression scenario.
+- Confirmed the explicit IPv6 bypass on the official iOS client over IPv6 Wi-Fi: YouTube,
+  WeChat, Douyin, Didi, and Didi Wallet all work concurrently.
 
 ## [0.1.0] - 2026-09-09
 

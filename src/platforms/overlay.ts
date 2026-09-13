@@ -1,5 +1,6 @@
 import type { ClientType } from '../domain/canonical-node';
 import type { RouteConfig, TunInbound } from '../renderers/sing-box/types';
+import { chinaIpv6RouteExcludes } from '../config/rules/geoip-cn-ipv6';
 
 export interface PlatformOverlay {
   inbounds: TunInbound[];
@@ -15,6 +16,7 @@ export function generatePlatformOverlay(clientType: ClientType): PlatformOverlay
     stack: 'mixed',
     dns_mode: 'hijack',
     auto_route: true,
+    ...(clientType === 'ios' ? { route_exclude_address: [...chinaIpv6RouteExcludes] } : {}),
     ...(clientType === 'windows' || clientType === 'linux' ? { strict_route: true } : {}),
     ...(clientType === 'linux' ? { auto_redirect: true } : {}),
   };
@@ -25,8 +27,7 @@ export function generatePlatformOverlay(clientType: ClientType): PlatformOverlay
     case 'macos':
     case 'windows':
     case 'linux':
-      return { inbounds: [tun], route: { auto_detect_interface: true } };
     case 'ios':
-      return { inbounds: [tun], route: {} };
+      return { inbounds: [tun], route: { auto_detect_interface: true } };
   }
 }

@@ -52,6 +52,7 @@ export interface TunInbound {
   stack: 'mixed';
   dns_mode: 'hijack';
   auto_route: true;
+  route_exclude_address?: string[];
   strict_route?: true;
   auto_redirect?: true;
 }

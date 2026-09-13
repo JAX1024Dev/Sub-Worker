@@ -22,16 +22,17 @@ describe('configured 3x-ui subscription', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(config).toMatchObject({
       dns: { final: 'dns-global', strategy: 'ipv4_only' },
-      route: { final: 'proxy' },
+      route: { final: 'proxy', auto_detect_interface: true },
     });
 
     if (
       !isRecord(config) ||
       !isRecord(config.dns) ||
       !isUnknownArray(config.dns.rules) ||
-      !isUnknownArray(config.outbounds)
+      !isUnknownArray(config.outbounds) ||
+      !isUnknownArray(config.inbounds)
     ) {
-      throw new Error('Expected DNS rules and outbounds arrays.');
+      throw new Error('Expected DNS rules, inbounds and outbounds arrays.');
     }
     if (!isRecord(config.route) || !isUnknownArray(config.route.rules)) {
       throw new Error('Expected a route rules array.');
@@ -48,6 +49,17 @@ describe('configured 3x-ui subscription', () => {
       action: 'route',
       outbound: 'proxy',
     });
+    expect(config.inbounds[0]).toMatchObject({ type: 'tun' });
+    if (
+      !isRecord(config.inbounds[0]) ||
+      !isUnknownArray(config.inbounds[0].route_exclude_address)
+    ) {
+      throw new Error('Expected explicit iOS route exclusions.');
+    }
+    expect(config.inbounds[0].route_exclude_address).toContain('2402:4e00::/32');
+    expect(config.inbounds[0].route_exclude_address).toContain('2402:840::/32');
+    expect(config.inbounds[0].route_exclude_address).toContain('2409:8000::/20');
+    expect(config.inbounds[0]).not.toHaveProperty('route_exclude_address_set');
 
     const nodeOutbounds = config.outbounds.filter(
       (outbound): outbound is Record<string, unknown> =>

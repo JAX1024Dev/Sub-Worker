@@ -89,8 +89,10 @@ action: reject
 no_drop: true
 ```
 
-该规则避免 iOS 应用获得 Packet Tunnel 直连出口无法使用的 IPv6 地址。`no_drop: true`
-确保高频 AAAA 查询始终立即收到拒绝，不因触发 reject 阈值而变为静默丢包。其他平台不生成 D0。
+该规则让 iOS 的普通域名连接继续优先使用兼容性更稳定的 IPv4，缩小平台网络差异。
+`no_drop: true` 确保高频 AAAA 查询始终立即收到拒绝，不因触发 reject 阈值而变为
+静默丢包。应用预解析、缓存或直接获得的 IPv6 字面量不受该规则影响，仍由路由模块
+按地域处理。其他平台不生成 D0。
 
 ### D1：中国域名
 
@@ -123,8 +125,8 @@ dns.timeout = 5s
 
 说明：
 
-- iOS 使用 `ipv4_only`，并配合 D0 拒绝 AAAA，避免应用选择无法通过 Packet Tunnel
-  直连的 IPv6 地址；这是平台兼容策略，不是 DNS 泄漏策略。
+- iOS 使用 `ipv4_only` 并配合 D0 拒绝 AAAA，降低普通域名连接的 IPv6 兼容风险；
+  这是保守的平台兼容策略，不是 DNS 泄漏策略，也不覆盖 IPv6 字面量。
 - 其他平台使用 `prefer_ipv4`，优先 IPv4 但保留 IPv6。
 - 保留 sing-box 进程内的正常 DNS 缓存以降低延迟；“Worker 不缓存订阅”不等于禁用客户端 DNS 缓存。
 - 不启用 optimistic cache，避免返回已过期记录。

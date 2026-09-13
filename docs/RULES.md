@@ -90,7 +90,7 @@ action: route → direct
 
 处理请求进入路由阶段时已经是 IP 的私网、回环和链路本地目标。
 
-### I1：iOS 公网 IPv6 代理保护
+### I1：iOS TUN 内公网 IPv6 代理保护
 
 仅当 `clientType = ios` 时，在 R3 之后生成：
 
@@ -99,10 +99,10 @@ match: ip_version = 6
 action: route → proxy
 ```
 
-该规则必须位于 R3 之后、R4 之前。私网 IPv6 仍由 R3 直连；其余公网 IPv6
-（包括应用预解析、缓存或直接使用的 IPv6 地址）必须经代理，避免 iOS Packet Tunnel
-的 direct 出站在没有可用 IPv6 路由时返回 `no route to host`。代理服务器必须具备
-访问目标 IPv6 的能力。
+iOS TUN 在接管流量前已通过显式 `route_exclude_address` 将中国 IPv6 交给系统原生
+网络，因此进入本规则的公网 IPv6 属于未被中国 IPv6 CIDR 覆盖的流量，必须经 proxy，
+避免 Packet Tunnel direct 出站返回 `no route to host`。该规则也保护应用预解析、缓存
+或直接使用的 IPv6 字面量。
 
 ### R4：中国域名直连
 
@@ -169,13 +169,18 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
 
 ## 6. 平台选项
 
-- macOS、Windows、Linux core：`route.auto_detect_interface = true`，避免 TUN 回环。
+- iOS、macOS、Windows、Linux core：`route.auto_detect_interface = true`，使出站连接绑定
+  到真实的默认网络并避免 TUN 回环。sing-box 1.14.0 将 iOS 纳入 Darwin 平台，Apple
+  官方客户端通过 NetworkExtension 的平台接口完成网络选择。
+- iOS TUN：`route_exclude_address` 包含从固定 `geoip-cn` 规则集生成的中国 IPv6 CIDR，
+  使其在进入 TUN 前由系统原生网络发送。不得使用 iOS 实机不生效的
+  `route_exclude_address_set`。中国 IPv4 继续在 TUN 内由 R8 直连；其他平台不生成
+  显式排除地址。
 - Android 官方客户端：平台 Overlay 决定 `override_android_vpn`，MVP 默认 false。
-- iOS：不生成仅桌面平台支持的 interface 选项。
 - iOS：R6 使用 `ipv4_only`；其他平台保持默认解析策略。
-- iOS：在 R3 与 R4 之间插入 I1，将公网 IPv6 交给 proxy。
-- 除已记录的 I1 外，平台差异只能调整 route 级系统集成字段，不能改变 R1–R8
-  的业务语义。
+- iOS：在 R3 与 R4 之间插入 I1，保护仍由 TUN 接管的公网 IPv6。
+- 除已记录的 iOS 原生旁路和 I1 外，平台差异只能调整 route 级系统集成字段和 R6
+  的解析策略。不得按应用动态端口或观测到的临时服务 IP 硬编码分流。
 
 ## 7. 输出契约
 
@@ -215,10 +220,19 @@ generateRules(clientType: ClientType) -> RoutingFragment {
 - 私网 IP 和解析到私网的域名 → direct。
 - 未分类域名和非 CN IP → proxy。
 - iOS R6 使用 `ipv4_only`，其他平台的 R6 不携带 `strategy`。
-- iOS 公网 IPv6 → proxy，私网 IPv6 → direct；其他平台不生成 I1。
+- iOS 生成 `auto_detect_interface = true`，显式中国 IPv6 `route_exclude_address` 与 I1。
+- iOS 中国 IPv6 → TUN 原生旁路，中国 IPv4 → TUN 内 direct；仍进入 TUN 的公网 IPv6
+  → proxy。
+- 显式 IPv6 CIDR 必须与固定版本 `geoip-cn` 一致，并覆盖实机日志中确认的
+  `2402:4e00:*`、`2402:840:*` 和 `2409:8c54:*` 地址。
+- 其他平台中国 IPv4/IPv6 → direct，其他 IPv4/IPv6 → proxy。
 - DNS 请求 → `hijack-dns`。
 - 规则集均使用固定 URL 和显式 HTTP client。
 - 五个平台输出通过 sing-box 1.14.0 `check`。
+
+实机基线：官方 iOS 客户端在 IPv6 Wi-Fi 下必须能同时访问 YouTube、微信、抖音、
+滴滴主应用及滴滴钱包。中国 IPv6 应在进入 TUN 前旁路，不能与同一会话的中国 IPv4
+形成国内/境外双出口。
 
 ## 10. 扩展规则
 
