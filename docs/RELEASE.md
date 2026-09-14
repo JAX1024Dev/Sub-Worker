@@ -27,6 +27,11 @@ pnpm deploy:staging
 macOS 官方客户端重新导入 staging 返回的配置。涉及 outbound 网络能力时，同时验证
 TCP 和 UDP/WebRTC。确认 Cloudflare WAF 或 Rate Limiting 已限制失败枚举和异常频率。
 
+`IOS_ROUTING_MODE = tun-dual-stack` 已按 ADR-0015 批准用于 staging 与 production。
+应确认 iOS 配置无 `route_exclude_address`、DNS 保留 AAAA、direct 使用
+`network_strategy: hybrid`；macOS 配置则必须拒绝 AAAA，并在 DNS 与 R6 使用
+`ipv4_only`。
+
 ## Production
 
 ```bash

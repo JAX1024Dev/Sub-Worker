@@ -121,8 +121,8 @@ common + outbounds + dns + rules + platform overlay
 
 | 平台    | 目标           | 负责内容                       |
 | ------- | -------------- | ------------------------------ |
-| iOS     | 官方图形客户端 | Apple TUN 与显式中国 IPv6 旁路 |
-| macOS   | 官方图形客户端 | TUN 与系统路由集成             |
+| iOS     | 官方图形客户端 | Apple TUN 双栈与网络选择策略   |
+| macOS   | 官方图形客户端 | TUN、系统路由与 IPv4 DNS 兼容  |
 | Android | 官方图形客户端 | VpnService 相关选项            |
 | Windows | sing-box core  | TUN、strict route、接口检测    |
 | Linux   | sing-box core  | TUN、auto route、auto redirect |
@@ -246,7 +246,9 @@ platform/runtime → composition root only
 - `domain` 不依赖 Cloudflare、3x-ui 或 sing-box JSON 类型。
 - source adapter 不依赖 renderer。
 - DNS 与 Rules Generator 通过明确片段契约协作，不相互调用。
-- Worker bindings 只在 composition root 注入。
+- Worker bindings 只在 composition root 注入。`IOS_ROUTING_MODE` 是非敏感部署变量：
+  staging 与 production 使用 `tun-dual-stack`；Composer 将其作为同一生成上下文传给
+  DNS、Rules、Outbound 与 Platform Overlay，防止部分切换。
 
 运行时依赖保持最小，不在 Worker 中运行 sing-box；sing-box 1.14.0 只用于本地和 CI 验证。
 
@@ -267,3 +269,6 @@ platform/runtime → composition root only
 - [ADR-0005](./adr/0005-routing-policy.md)：国内直连、国外代理。
 - [ADR-0006](./adr/0006-vless-reality-scope.md)：VLESS + REALITY 范围。
 - [ADR-0007](./adr/0007-dns-policy.md)：分流加密 DNS。
+- [ADR-0014](./adr/0014-ios-explicit-cn-ipv6-bypass.md)：iOS 中国 IPv6 显式原生旁路回退方案。
+- [ADR-0015](./adr/0015-ios-tun-dual-stack.md)：iOS TUN 双栈路由。
+- [ADR-0016](./adr/0016-macos-ipv4-dns-compatibility.md)：macOS IPv4 DNS 兼容策略。

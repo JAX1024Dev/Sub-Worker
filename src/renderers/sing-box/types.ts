@@ -68,7 +68,8 @@ export type Outbound =
       interval: string;
       tolerance: number;
     }
-  | { type: 'direct' | 'block'; tag: string };
+  | { type: 'direct'; tag: string; network_strategy?: 'hybrid' }
+  | { type: 'block'; tag: string };
 
 export interface VlessOutbound {
   type: 'vless';

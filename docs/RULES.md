@@ -92,7 +92,7 @@ action: route → direct
 
 ### I1：iOS TUN 内公网 IPv6 代理保护
 
-仅当 `clientType = ios` 时，在 R3 之后生成：
+仅当 `clientType = ios` 且 `IOS_ROUTING_MODE = native-bypass` 时，在 R3 之后生成：
 
 ```text
 match: ip_version = 6
@@ -126,11 +126,12 @@ action: route → proxy
 match: unconditional non-final rule
 action: resolve
 server: omitted
-strategy: ipv4_only # 仅 iOS；其他平台省略
+strategy: ipv4_only # macOS 与 iOS native-bypass；其他情况省略
 ```
 
 不指定 server，使域名目标进入 [DNS.md](./DNS.md) 定义的 DNS rules；IP 目标不需要解析。该 action 是 non-final，处理后继续匹配后续 IP 规则。
-iOS 显式使用 `ipv4_only`，与 DNS 模块的 AAAA 拒绝策略形成纵深保护，避免未分类域名解析为不可直连的 IPv6。
+macOS 与 iOS `native-bypass` 显式使用 `ipv4_only`，与 DNS 模块的 AAAA 拒绝策略形成
+纵深保护。iOS `tun-dual-stack` 省略该限制，使解析到的 IPv6 继续由 R8 和 Final 分流。
 
 ### R7：解析后的私网目标直连
 
@@ -177,8 +178,11 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
   `route_exclude_address_set`。中国 IPv4 继续在 TUN 内由 R8 直连；其他平台不生成
   显式排除地址。
 - Android 官方客户端：平台 Overlay 决定 `override_android_vpn`，MVP 默认 false。
-- iOS：R6 使用 `ipv4_only`；其他平台保持默认解析策略。
-- iOS：在 R3 与 R4 之间插入 I1，保护仍由 TUN 接管的公网 IPv6。
+- iOS `native-bypass`：R6 使用 `ipv4_only`，并在 R3 与 R4 之间插入 I1，保护仍由
+  TUN 接管的公网 IPv6；其他平台保持默认解析策略。
+- iOS `tun-dual-stack`：不生成显式旁路或 I1；IPv4 与 IPv6 均进入 TUN，中国
+  IP 命中 R8 → direct，其他 IP 命中 Final → proxy。direct outbound 使用
+  `network_strategy: hybrid` 试验 Apple Packet Tunnel 的外部接口拨号。
 - 除已记录的 iOS 原生旁路和 I1 外，平台差异只能调整 route 级系统集成字段和 R6
   的解析策略。不得按应用动态端口或观测到的临时服务 IP 硬编码分流。
 
@@ -187,7 +191,7 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
 路由生成器输出：
 
 ```text
-generateRules(clientType: ClientType) -> RoutingFragment {
+generateRules(clientType: ClientType, iosRoutingMode: IosRoutingMode) -> RoutingFragment {
   http_clients: HttpClient[]
   route: {
     rules: RouteRule[]
@@ -221,6 +225,9 @@ generateRules(clientType: ClientType) -> RoutingFragment {
 - 未分类域名和非 CN IP → proxy。
 - iOS R6 使用 `ipv4_only`，其他平台的 R6 不携带 `strategy`。
 - iOS 生成 `auto_detect_interface = true`，显式中国 IPv6 `route_exclude_address` 与 I1。
+- iOS `tun-dual-stack` 不生成 IPv6 排除、I1 或 R6 `ipv4_only`，并为 direct 生成
+  `network_strategy: hybrid`。
+- macOS DNS 与 R6 使用 `ipv4_only`，避免 IPv4-only 物理网络上的应用选中不可达 AAAA。
 - iOS 中国 IPv6 → TUN 原生旁路，中国 IPv4 → TUN 内 direct；仍进入 TUN 的公网 IPv6
   → proxy。
 - 显式 IPv6 CIDR 必须与固定版本 `geoip-cn` 一致，并覆盖实机日志中确认的

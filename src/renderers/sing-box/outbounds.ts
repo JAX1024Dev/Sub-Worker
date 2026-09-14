@@ -64,7 +64,14 @@ export interface OutboundFragment {
   nodeTags: string[];
 }
 
-export function generateOutbounds(nodes: CanonicalNode[]): OutboundFragment {
+export interface GenerateOutboundsOptions {
+  directNetworkStrategy?: 'hybrid';
+}
+
+export function generateOutbounds(
+  nodes: CanonicalNode[],
+  options: GenerateOutboundsOptions = {},
+): OutboundFragment {
   if (nodes.length === 0) {
     throw new Error('Cannot generate outbounds without compatible nodes.');
   }
@@ -90,7 +97,13 @@ export function generateOutbounds(nodes: CanonicalNode[]): OutboundFragment {
         outbounds: [singBoxTags.automatic, ...nodeTags],
         default: singBoxTags.automatic,
       },
-      { type: 'direct', tag: singBoxTags.direct },
+      {
+        type: 'direct',
+        tag: singBoxTags.direct,
+        ...(options.directNetworkStrategy === undefined
+          ? {}
+          : { network_strategy: options.directNetworkStrategy }),
+      },
       { type: 'block', tag: singBoxTags.block },
     ],
   };

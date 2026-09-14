@@ -17,12 +17,21 @@
       "enabled": false,
     },
   },
+  "vars": {
+    "IOS_ROUTING_MODE": "native-bypass",
+  },
   "env": {
     "staging": {
       "name": "sub-worker-staging",
+      "vars": {
+        "IOS_ROUTING_MODE": "tun-dual-stack",
+      },
     },
     "production": {
       "name": "sub-worker-production",
+      "vars": {
+        "IOS_ROUTING_MODE": "tun-dual-stack",
+      },
     },
   },
 }

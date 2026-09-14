@@ -4,6 +4,7 @@ import {
   type GeneratedSubscription,
 } from '../application/generate-subscription';
 import { ServiceError, type ServiceErrorCode } from '../domain/errors';
+import { resolveIosRoutingMode } from '../platforms/network-policy';
 import { parseClientType, validateSubscriptionId } from '../security/subscription-input';
 import type { SubscriptionMetadata } from '../sources/three-x-ui/subscription-document';
 
@@ -106,7 +107,8 @@ function successHeaders(
 
 export async function handleRequest(
   request: Request,
-  env: Pick<Cloudflare.Env, 'THREE_X_UI_SUB_BASE_URL'>,
+  env: Pick<Cloudflare.Env, 'THREE_X_UI_SUB_BASE_URL'> &
+    Partial<Record<'IOS_ROUTING_MODE', string>>,
   generator: GenerateSubscription = generateSubscription,
 ): Promise<Response> {
   const requestId = crypto.randomUUID();
@@ -161,6 +163,7 @@ export async function handleRequest(
     const result = await generator({
       baseUrl: env.THREE_X_UI_SUB_BASE_URL,
       clientType,
+      iosRoutingMode: resolveIosRoutingMode(env.IOS_ROUTING_MODE),
       subscriptionId,
     });
     return jsonResponse(result.config, 200, successHeaders(clientType, requestId, result.metadata));

@@ -1,5 +1,11 @@
 import { singBoxTags } from '../../renderers/sing-box/tags';
 import type { ClientType } from '../../domain/canonical-node';
+import {
+  defaultIosRoutingMode,
+  type IosRoutingMode,
+  usesIosTunDualStack,
+  usesIpv4OnlyDns,
+} from '../../platforms/network-policy';
 import type {
   HttpClient,
   RemoteRuleSet,
@@ -23,9 +29,16 @@ function remoteRuleSet(tag: string, url: string): RemoteRuleSet {
   };
 }
 
-export function generateRules(clientType: ClientType): RoutingFragment {
+export function generateRules(
+  clientType: ClientType,
+  iosRoutingMode: IosRoutingMode = defaultIosRoutingMode,
+): RoutingFragment {
+  const iosTunDualStack = usesIosTunDualStack(clientType, iosRoutingMode);
+  const ipv4OnlyDns = usesIpv4OnlyDns(clientType, iosRoutingMode);
   const platformSafetyRules: RouteRule[] =
-    clientType === 'ios' ? [{ ip_version: 6, action: 'route', outbound: singBoxTags.proxy }] : [];
+    clientType === 'ios' && !iosTunDualStack
+      ? [{ ip_version: 6, action: 'route', outbound: singBoxTags.proxy }]
+      : [];
 
   return {
     httpClients: [{ tag: singBoxTags.rulesHttpClient, detour: singBoxTags.proxy }],
@@ -45,7 +58,7 @@ export function generateRules(clientType: ClientType): RoutingFragment {
           action: 'route',
           outbound: singBoxTags.proxy,
         },
-        clientType === 'ios' ? { action: 'resolve', strategy: 'ipv4_only' } : { action: 'resolve' },
+        ipv4OnlyDns ? { action: 'resolve', strategy: 'ipv4_only' } : { action: 'resolve' },
         { ip_is_private: true, action: 'route', outbound: singBoxTags.direct },
         {
           rule_set: singBoxTags.ruleSetGeoIpChina,

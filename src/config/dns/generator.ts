@@ -1,5 +1,10 @@
 import { singBoxTags } from '../../renderers/sing-box/tags';
 import type { ClientType } from '../../domain/canonical-node';
+import {
+  defaultIosRoutingMode,
+  type IosRoutingMode,
+  usesIpv4OnlyDns,
+} from '../../platforms/network-policy';
 import type { DnsConfig, DnsRule } from '../../renderers/sing-box/types';
 
 export interface DnsFragment {
@@ -15,8 +20,11 @@ export interface DnsFragment {
   };
 }
 
-export function generateDns(clientType: ClientType): DnsFragment {
-  const forceIpv4 = clientType === 'ios';
+export function generateDns(
+  clientType: ClientType,
+  iosRoutingMode: IosRoutingMode = defaultIosRoutingMode,
+): DnsFragment {
+  const forceIpv4 = usesIpv4OnlyDns(clientType, iosRoutingMode);
   const rules: DnsRule[] = [];
 
   if (forceIpv4) {

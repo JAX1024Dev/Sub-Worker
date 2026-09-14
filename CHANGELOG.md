@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 - Replaced the ineffective iOS `route_exclude_address_set` with generated explicit China IPv6
   exclusions. This prevents domestic IPv4 and IPv6 requests in one app session from using
   different geographic exits.
+- Promoted the validated iOS TUN dual-stack profile so China IPv4 and IPv6 use the same routing
+  rules, with Apple `hybrid` network selection on the direct outbound.
+- Forced IPv4 DNS answers on macOS after logs showed China IPv6 direct connections failing with
+  `no route to host` on an IPv4-only physical interface.
 
 ### Validated
 
@@ -18,6 +22,7 @@ All notable changes to this project will be documented in this file.
   clients, including the UDP/WebRTC regression scenario.
 - Confirmed the explicit IPv6 bypass on the official iOS client over IPv6 Wi-Fi: YouTube,
   WeChat, Douyin, Didi, and Didi Wallet all work concurrently.
+- Confirmed the iOS TUN dual-stack staging profile works normally before production promotion.
 
 ## [0.1.0] - 2026-09-09
 

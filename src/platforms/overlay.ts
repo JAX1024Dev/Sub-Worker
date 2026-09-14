@@ -1,13 +1,18 @@
 import type { ClientType } from '../domain/canonical-node';
 import type { RouteConfig, TunInbound } from '../renderers/sing-box/types';
 import { chinaIpv6RouteExcludes } from '../config/rules/geoip-cn-ipv6';
+import { defaultIosRoutingMode, type IosRoutingMode, usesIosTunDualStack } from './network-policy';
 
 export interface PlatformOverlay {
   inbounds: TunInbound[];
   route: Pick<RouteConfig, 'auto_detect_interface' | 'override_android_vpn'>;
 }
 
-export function generatePlatformOverlay(clientType: ClientType): PlatformOverlay {
+export function generatePlatformOverlay(
+  clientType: ClientType,
+  iosRoutingMode: IosRoutingMode = defaultIosRoutingMode,
+): PlatformOverlay {
+  const iosTunDualStack = usesIosTunDualStack(clientType, iosRoutingMode);
   const tun: TunInbound = {
     type: 'tun',
     tag: 'tun-in',
@@ -16,7 +21,9 @@ export function generatePlatformOverlay(clientType: ClientType): PlatformOverlay
     stack: 'mixed',
     dns_mode: 'hijack',
     auto_route: true,
-    ...(clientType === 'ios' ? { route_exclude_address: [...chinaIpv6RouteExcludes] } : {}),
+    ...(clientType === 'ios' && !iosTunDualStack
+      ? { route_exclude_address: [...chinaIpv6RouteExcludes] }
+      : {}),
     ...(clientType === 'windows' || clientType === 'linux' ? { strict_route: true } : {}),
     ...(clientType === 'linux' ? { auto_redirect: true } : {}),
   };

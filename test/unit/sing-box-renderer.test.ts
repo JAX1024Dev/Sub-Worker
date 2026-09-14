@@ -33,7 +33,7 @@ describe('sing-box renderer', () => {
   });
 
   it('generates the specified encrypted DNS policy', () => {
-    expect(generateDns('macos').dns).toEqual({
+    expect(generateDns('android').dns).toEqual({
       servers: [
         {
           type: 'https',
@@ -63,7 +63,16 @@ describe('sing-box renderer', () => {
       optimistic: false,
       timeout: '5s',
     });
-    expect(generateDns('macos').dns.servers[0]).not.toHaveProperty('detour');
+    expect(generateDns('android').dns.servers[0]).not.toHaveProperty('detour');
+  });
+
+  it('forces IPv4 DNS answers on macOS when the physical network has no IPv6 route', () => {
+    const dns = generateDns('macos').dns;
+    const rules = generateRules('macos').route.rules;
+
+    expect(dns.strategy).toBe('ipv4_only');
+    expect(dns.rules[0]).toEqual({ query_type: ['AAAA'], action: 'reject', no_drop: true });
+    expect(rules).toContainEqual({ action: 'resolve', strategy: 'ipv4_only' });
   });
 
   it('forces IPv4 DNS answers for iOS to avoid unreachable direct IPv6 routes', () => {
@@ -74,7 +83,7 @@ describe('sing-box renderer', () => {
   });
 
   it('preserves the R1-R8 route order and uses pinned rule sets', () => {
-    const routing = generateRules('macos');
+    const routing = generateRules('android');
     expect(routing.route.rules).toEqual([
       { action: 'sniff' },
       { protocol: 'dns', action: 'hijack-dns' },
@@ -114,6 +123,40 @@ describe('sing-box renderer', () => {
       action: 'route',
       outbound: 'proxy',
     });
+  });
+
+  it('generates the iOS TUN dual-stack profile as one coherent policy', () => {
+    const config = composeSingBoxConfig([fakeCanonicalNode], 'ios', {
+      iosRoutingMode: 'tun-dual-stack',
+    });
+    const [tun] = config.inbounds;
+    const direct = config.outbounds.find((outbound) => outbound.type === 'direct');
+
+    expect(tun).toBeDefined();
+    expect(tun).not.toHaveProperty('route_exclude_address');
+    expect(config.dns.strategy).toBe('prefer_ipv4');
+    expect(config.dns.rules).not.toContainEqual({
+      query_type: ['AAAA'],
+      action: 'reject',
+      no_drop: true,
+    });
+    expect(config.route.rules).toContainEqual({ action: 'resolve' });
+    expect(config.route.rules).not.toContainEqual({
+      action: 'resolve',
+      strategy: 'ipv4_only',
+    });
+    expect(config.route.rules).not.toContainEqual({
+      ip_version: 6,
+      action: 'route',
+      outbound: 'proxy',
+    });
+    expect(config.route.rules).toContainEqual({
+      rule_set: 'geoip-cn',
+      action: 'route',
+      outbound: 'direct',
+    });
+    expect(config.route.final).toBe('proxy');
+    expect(direct).toMatchObject({ network_strategy: 'hybrid' });
   });
 
   it.each(clientTypes)('composes the %s platform without deprecated fields', (clientType) => {
@@ -165,6 +208,23 @@ describe('sing-box renderer', () => {
         strategy: 'ipv4_only',
       });
       expect(config.route.rules).toContainEqual({
+        ip_version: 6,
+        action: 'route',
+        outbound: 'proxy',
+      });
+    } else if (clientType === 'macos') {
+      expect(tun).not.toHaveProperty('route_exclude_address');
+      expect(config.dns.strategy).toBe('ipv4_only');
+      expect(config.dns.rules[0]).toEqual({
+        query_type: ['AAAA'],
+        action: 'reject',
+        no_drop: true,
+      });
+      expect(config.route.rules).toContainEqual({
+        action: 'resolve',
+        strategy: 'ipv4_only',
+      });
+      expect(config.route.rules).not.toContainEqual({
         ip_version: 6,
         action: 'route',
         outbound: 'proxy',

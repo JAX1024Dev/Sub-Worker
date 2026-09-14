@@ -45,6 +45,36 @@ describe('worker API', () => {
     expect(generator).toHaveBeenCalledWith({
       baseUrl: 'https://subscription.example.invalid/mainsub/',
       clientType: 'linux',
+      iosRoutingMode: 'native-bypass',
+      subscriptionId: 'example-subscription-id',
+    });
+  });
+
+  it('passes the staging dual-stack mode into iOS generation', async () => {
+    const generator = vi.fn((options: GenerateSubscriptionOptions) =>
+      Promise.resolve({
+        config: composeSingBoxConfig([fakeCanonicalNode], options.clientType, {
+          ...(options.iosRoutingMode === undefined
+            ? {}
+            : { iosRoutingMode: options.iosRoutingMode }),
+        }),
+        metadata: {},
+      }),
+    );
+    const response = await handleRequest(
+      new Request('https://example.test/v1/sing-box/ios/example-subscription-id'),
+      {
+        THREE_X_UI_SUB_BASE_URL: 'https://subscription.example.invalid/mainsub/',
+        IOS_ROUTING_MODE: 'tun-dual-stack',
+      },
+      generator,
+    );
+
+    expect(response.status).toBe(200);
+    expect(generator).toHaveBeenCalledWith({
+      baseUrl: 'https://subscription.example.invalid/mainsub/',
+      clientType: 'ios',
+      iosRoutingMode: 'tun-dual-stack',
       subscriptionId: 'example-subscription-id',
     });
   });

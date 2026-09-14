@@ -14,3 +14,12 @@ for (const clientType of clientTypes) {
   const contents = await format(JSON.stringify(config), { parser: 'json' });
   await writeFile(outputPath, contents, 'utf8');
 }
+
+const iosTunDualStack = composeSingBoxConfig([fakeCanonicalNode], 'ios', {
+  iosRoutingMode: 'tun-dual-stack',
+});
+await writeFile(
+  resolve(outputDirectory, 'ios-tun-dual-stack.json'),
+  await format(JSON.stringify(iosTunDualStack), { parser: 'json' }),
+  'utf8',
+);

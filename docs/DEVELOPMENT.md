@@ -178,6 +178,9 @@ pnpm build
 - 设置合理的 CPU 上限。
 - 不声明 KV、D1、R2 或 Durable Objects binding。
 - 普通配置使用 vars，敏感配置使用 Secret。
+- `IOS_ROUTING_MODE` 为非敏感环境变量：staging 与 production 固定为
+  `tun-dual-stack`。Wrangler 的环境 vars 不继承，两个环境必须分别声明；
+  `native-bypass` 仅作为 iOS 快速回退模式。
 
 ## 10. 部署
 
@@ -195,6 +198,10 @@ pnpm deploy:staging
 pnpm test:e2e
 pnpm deploy:production
 ```
+
+iOS URL 输出 TUN 双栈配置。部署 staging 后必须检查生成配置的 DNS strategy、TUN 排除、
+direct 网络策略和路由顺序，不得只检查 HTTP 200；production 只能推广已经通过实机验证
+的同一模式。
 
 生产发布要求：
 

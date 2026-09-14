@@ -24,6 +24,21 @@ for (const clientType of clientTypes) {
   }
 }
 
+const iosDualStackExpected = await format(
+  JSON.stringify(
+    composeSingBoxConfig([fakeCanonicalNode], 'ios', { iosRoutingMode: 'tun-dual-stack' }),
+  ),
+  { parser: 'json' },
+);
+const iosDualStackActual = await readFile(
+  resolve(fixtureDirectory, 'ios-tun-dual-stack.json'),
+  'utf8',
+);
+
+if (iosDualStackActual !== iosDualStackExpected) {
+  staleFixtures.push('ios-tun-dual-stack.json');
+}
+
 if (staleFixtures.length > 0) {
   throw new Error(
     `Generated fixtures are stale: ${staleFixtures.join(', ')}. Run pnpm fixtures:generate.`,
