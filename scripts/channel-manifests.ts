@@ -29,6 +29,14 @@ export function validateFullCommit(commit: string): string {
   return commit;
 }
 
+export function parseBundleCommitArguments(arguments_: string[]): string {
+  const values = arguments_[0] === '--' ? arguments_.slice(1) : arguments_;
+  if (values.length !== 1 || values[0] === undefined) {
+    throw new Error('Usage: pnpm config:publish:staging -- <40-character-bundle-commit>');
+  }
+  return validateFullCommit(values[0]);
+}
+
 async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');

@@ -8,6 +8,7 @@ import windowsBundle from '../../example/sing-box/published/windows.bundle.json'
 import {
   bundleCommit,
   createChannelManifest,
+  parseBundleCommitArguments,
   promoteStagingManifest,
   validateFullCommit,
 } from '../../scripts/channel-manifests';
@@ -61,6 +62,12 @@ describe('channel manifest publication', () => {
       expect(() => validateFullCommit(value)).toThrow(/40-character lowercase/u);
     },
   );
+
+  it('accepts the pnpm argument separator before the bundle commit', () => {
+    expect(parseBundleCommitArguments(['--', commit])).toBe(commit);
+    expect(parseBundleCommitArguments([commit])).toBe(commit);
+    expect(() => parseBundleCommitArguments(['--'])).toThrow(/Usage/u);
+  });
 
   it('rejects a bundle whose platform does not match its profile', async () => {
     const wrongBundle = (): Promise<Uint8Array<ArrayBuffer>> =>
