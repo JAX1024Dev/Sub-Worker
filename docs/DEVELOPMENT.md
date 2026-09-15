@@ -304,13 +304,15 @@ Worker 代码部署与配置发布是两条流程：只有 TypeScript、schema �
 - **已完成**：Wrangler 为本地、staging、production 声明各自的 manifest URL 并重新生成类型。
 - **已完成**：实现从不可变 Git commit 生成五平台摘要的 staging 发布命令。
 - **已完成**：配置变更自动创建 staging manifest PR，并显式触发该提交的 CI。
-- **待执行**：提交不可变 bundle、合并首次 staging manifest PR 并部署 Worker。
-- **待执行**：完成五平台 schema、网络、UDP/WebRTC、订阅刷新、GitHub 故障和延迟测试。
+- **已完成**：首次不可变 bundle、staging manifest 和 Worker 已发布。
+- **已完成**：五平台 schema、真实订阅刷新、错误路径、channel 一致性和延迟测试。
+- **待实机回归**：配置策略变化时继续执行 UDP/WebRTC 与关键应用访问测试。
 
 ### 阶段 E：production 推广与清理
 
 - **已完成**：受保护工作流只推广 staging 的同一 URL 和摘要，并创建 production PR。
 - **已完成**：删除不再生效的 iOS/macOS routing-mode Worker bindings。
-- **待执行**：配置 `configuration-production` 必需审批人并完成首次 promotion。
+- **已完成**：首次 production promotion 和 Worker 部署。
+- **待仓库设置**：确认 `configuration-production` 必需审批人与 Actions 创建 PR 权限。
 - 观察稳定后删除仅供 golden diff 使用的硬编码 Generator。
 - 后续普通配置变更只走 config publish，不再部署 Worker。

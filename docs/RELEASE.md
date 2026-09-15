@@ -56,6 +56,18 @@ pnpm deploy:production
 
 发布后记录 Cloudflare deployment version，并用不含 secret 的 request ID 验证错误日志。
 
+## 最新发布记录
+
+- 日期：2026-09-15
+- Bundle commit：`f9449437faddb1bfd5efd6fbe731b6c8e0ec135b`
+- Staging Worker version：`5794567c-266a-4f25-8c62-c8c867828e2c`
+- Production Worker version：`c26aefde-67a6-4dc5-9e1a-fc6286e8917c`
+- staging 与 production manifest 均通过 Git 对象和 SHA-256 一致性检查。
+- 五个平台均返回 HTTP 200、`private, no-store`，production 与 staging 正文逐字节一致。
+- production 实测响应约 0.89–2.74 秒；无效 Subscription ID 返回 HTTP 404。
+- iOS、macOS、Android、Windows 通过本机 sing-box 1.14.0 检查；Linux 配置通过 CI 检查，
+  本机 macOS 不执行 Linux `auto_redirect` 初始化验证。
+
 ## 配置发布（重构目标）
 
 兼容既有 bundle schema 的 common、DNS、TUN、平台和路由变化不发布 Worker：

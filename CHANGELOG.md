@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added reviewed sing-box source fragments, deterministic per-platform bundles, strict schemas,
+  channel manifests, and GitHub Actions promotion workflows.
+- Added bounded GitHub configuration loading with immutable commit URLs, SHA-256 verification,
+  strict JSON parsing, platform validation, and fail-closed error handling.
+
+### Changed
+
+- Switched the Worker request path from hard-coded platform generators to verified remote bundles
+  combined with live 3x-ui nodes.
+- Replaced iOS/macOS routing-mode bindings with staging and production manifest URLs.
+
 ### Fixed
 
 - Prevented iOS public IPv6 destinations from entering an unavailable direct IPv6 route.
@@ -23,6 +36,8 @@ All notable changes to this project will be documented in this file.
 - Confirmed the explicit IPv6 bypass on the official iOS client over IPv6 Wi-Fi: YouTube,
   WeChat, Douyin, Didi, and Didi Wallet all work concurrently.
 - Confirmed the iOS TUN dual-stack staging profile works normally before production promotion.
+- Confirmed all five remote profiles return valid configurations from staging and production, with
+  byte-identical output across both channels for the promoted bundle.
 
 ## [0.1.0] - 2026-09-09
 
