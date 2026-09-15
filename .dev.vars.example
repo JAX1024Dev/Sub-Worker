@@ -1,4 +1,8 @@
 # Copy to .dev.vars and replace with the real HTTPS 3x-ui subscription base URL.
 THREE_X_UI_SUB_BASE_URL="https://subscription.example.invalid/sub/"
+SING_BOX_CONFIG_MANIFEST_URL="https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/main/example/sing-box/channels/staging.json"
 # Only used by the explicitly invoked live E2E test.
 LIVE_TEST_SUBSCRIPTION_ID="example-subscription-id"
+
+# Base URL of the staging Worker used by the explicitly invoked macOS dual-stack test.
+STAGING_WORKER_BASE_URL="https://sub-worker-staging.example.workers.dev"

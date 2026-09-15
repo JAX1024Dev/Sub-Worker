@@ -12,16 +12,16 @@
 不可信：客户端请求、路径参数、请求头
     │
     ▼
-可信：Worker 代码、部署配置和 bindings
-    │
-    ▼
-受控目标：唯一的 3x-ui HTTPS 主机
-    │
-    ▼
-不可信数据：订阅正文、节点名称和节点参数
+可信：Worker 代码、部署配置、运行时 schema 和 bindings
+    ├─ 受控目标：唯一的 3x-ui HTTPS 主机
+    │    └─ 不可信数据：订阅正文、节点名称和节点参数
+    └─ 受控目标：固定 GitHub owner/repo/channel
+         └─ 不可信数据：manifest 和静态配置 bundle
 ```
 
 即使上游主机由管理员维护，其响应仍必须经过完整校验。
+GitHub 是配置控制面，不是自动可信输入；仓库权限、CI 和 production promotion 成为新的
+供应链安全边界。
 
 ## 3. 认证与授权
 
@@ -51,6 +51,8 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - fixture 只使用不可用域名和虚假凭据。
 - 不把真实订阅或配置上传为测试 artifact。
 - 错误监控不附带请求路径、请求正文、上游正文或生成配置。
+- GitHub manifest 和 bundle 必须是公开且不含 Subscription ID、节点、token 或其他
+  secret 的静态文件。
 
 ## 5. 请求验证
 
@@ -60,6 +62,7 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - 拒绝 `/`、反斜杠、控制字符、无效 percent encoding、双重编码和超长值。
 - URL 只解码一次。
 - 不接受查询参数或请求头覆盖 Base URL、host、renderer 或目标版本。
+- 不接受请求参数或请求头覆盖配置 manifest、bundle、仓库、branch、commit 或 channel。
 - Subscription ID 的最终字符集和长度必须使用目标 3x-ui 版本 fixture 验证。
 
 ## 6. 上游响应验证
@@ -113,10 +116,38 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - 不转发客户端 Cookie、Authorization、Referer 或内部预览头。
 - 不提供跳过上游证书验证的选项。
 
+### GitHub 配置源
+
+- manifest URL 只能来自部署变量，且必须是固定 HTTPS origin、owner、repo 和路径。
+- manifest 中的 bundle URL 必须属于同一批准仓库、使用完整 40 位 commit SHA，并位于
+  `example/sing-box/published/`。
+- 禁止 branch 名、tag、相对路径、重定向和 URL userinfo；禁止客户端参与 URL 构造。
+- manifest 与 bundle 分别设置超时和流式正文上限，拒绝非 JSON、BOM、重复键或尾随
+  非空内容；当前严格解析器不采用后值覆盖。
+- bundle 必须通过 Web Crypto SHA-256、项目 schema、clientType 和 sing-box 版本校验。
+- Remote Config Source 不得接收 Subscription ID、节点、3x-ui URL 或客户端请求头，因此
+  不可能把用户 secret 发送到 GitHub。
+- 任一验证失败必须失败关闭；不得使用部分 bundle、代码内隐式默认或未知旧版本。
+- 当前 Remote Config Source 已实现上述读取与验证边界，但在 Composer 迁移完成前不进入
+  用户请求链路。
+
+### GitHub 供应链
+
+- production channel 启用 branch protection、CODEOWNERS、必需 CI 和受保护环境审批。
+- GitHub Actions 默认只读权限；发布 job 仅获得目标路径所需的最小写权限。
+- channel 发布 job 只在创建专用分支、PR 和显式 dispatch CI 时获得
+  `contents: write`、`pull-requests: write` 与 `actions: write`。
+- fork PR 不获得发布 secret 或 production environment 权限。
+- published bundle 由 CI 生成，不接受人工直接编辑；manifest promotion 记录来源 commit、
+  SHA-256 和审批人。
+- SHA-256 只能验证内容一致性，不能抵御有权同时修改 manifest 和 bundle 的攻击者。
+  如风险提升，增加离线/受保护环境签名并把验证公钥固定在 Worker 中。
+
 ## 8. 资源与滥用控制
 
 - 上游请求设置总超时。
 - MVP 不自动重试，避免放大上游压力。
+- GitHub 获取首期不自动重试；一次请求最多获取一个 manifest 和一个 bundle。
 - 限制正文、解码结果、节点数量和生成结果大小。
 - 使用 Cloudflare Rate Limiting 或 WAF 限制单 IP 请求和失败枚举。
 - Worker 设置合理的 CPU 上限。
@@ -129,6 +160,9 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - 成功和错误响应均设置 `Cache-Control: private, no-store`。
 - 不复用跨请求的用户配置对象。
 - 不允许 CDN 使用自定义规则缓存 API 响应。
+- 首期也不在 Worker 中缓存 manifest/bundle；不可变 bundle 可以由 GitHub CDN 正常缓存。
+- 将来缓存公开 bundle 时必须使用独立 key 和存储边界，绝不能包含 Subscription ID、节点
+  或最终配置。
 
 这里的缓存约束只针对 Worker 的订阅和转换结果。客户端内部行为由各配置规格定义。
 
@@ -139,6 +173,7 @@ Worker 只需要：
 - 接收公开 HTTPS GET。
 - 读取运行所需 bindings。
 - 请求唯一的 3x-ui HTTPS host。
+- 请求固定的 GitHub manifest 和其批准的不可变 bundle。
 - 写入经过脱敏的结构化日志。
 
 Worker 不需要：
@@ -147,6 +182,7 @@ Worker 不需要：
 - Cloudflare API token 的运行时访问。
 - 数据库、对象存储或文件系统权限。
 - 任意 TCP socket 或任意上游代理能力。
+- GitHub API token；公开配置读取不需要运行时凭据。
 
 部署 token 只允许目标账号和 Worker 的必要部署/路由操作，不进入 Worker runtime。
 
@@ -158,6 +194,7 @@ Worker 不需要：
 - clientType。
 - Subscription ID 的带服务端 pepper 的 HMAC 截断摘要，或完全不记录该标识。
 - 上游状态类别。
+- 配置 channel、脱敏 bundle 版本和固定配置错误 code。
 - 节点总数、有效数、忽略数。
 - 固定 warning/error code 和各阶段耗时。
 
@@ -168,6 +205,7 @@ Worker 不需要：
 - 分享链接、UUID、REALITY 参数或生成配置。
 - 请求头 dump、Cookie、Authorization。
 - 未清洗异常对象。
+- 完整 manifest/bundle URL、GitHub token（首期不存在）或配置正文。
 
 生产环境必须配置采样和保留期；接入第三方日志平台前检查其自动采集字段。
 
@@ -202,6 +240,10 @@ X-Content-Type-Options: nosniff
 - 缺失 REALITY 必需字段和未知 transport。
 - 所有失败路径不记录或返回 secret。
 - 所有 API 响应不可缓存。
+- 任意 manifest/bundle URL、branch、重定向、非 commit URL 和路径穿越。
+- manifest/bundle 超时、超限、摘要错误、schema 错误、平台错配、未知字段和重复 tag。
+- GitHub 不可用时不泄露内部 URL，也不返回旧的或部分配置。
+- 发布工作流不能由 fork、未审批 job 或普通源码测试获得 production 写权限。
 - 速率限制和超时行为符合接口约定。
 
 ## 14. 事件处理

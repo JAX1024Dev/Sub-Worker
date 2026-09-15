@@ -7,6 +7,23 @@ import { ServiceError, type ServiceErrorCode } from '../../src/domain/errors';
 import { composeSingBoxConfig } from '../../src/renderers/sing-box/composer';
 import { fakeCanonicalNode } from '../fixtures/fake-node';
 
+const manifestUrl =
+  'https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/main/example/sing-box/channels/staging.json';
+const testConfiguration = {
+  bundleSha256: 'a'.repeat(64),
+  channel: 'staging',
+} as const;
+
+function testEnv(): Pick<
+  Cloudflare.Env,
+  'SING_BOX_CONFIG_MANIFEST_URL' | 'THREE_X_UI_SUB_BASE_URL'
+> {
+  return {
+    SING_BOX_CONFIG_MANIFEST_URL: manifestUrl,
+    THREE_X_UI_SUB_BASE_URL: 'https://subscription.example.invalid/mainsub/',
+  };
+}
+
 describe('worker API', () => {
   it('reports its health', async () => {
     const response = await exports.default.fetch(new Request('https://example.test/health'));
@@ -20,6 +37,7 @@ describe('worker API', () => {
     const generator = vi.fn((options: GenerateSubscriptionOptions) =>
       Promise.resolve({
         config: composeSingBoxConfig([fakeCanonicalNode], options.clientType),
+        configuration: testConfiguration,
         metadata: {
           profileTitle: 'Example',
           subscriptionUserinfo: 'upload=1; download=2',
@@ -28,7 +46,7 @@ describe('worker API', () => {
     );
     const response = await handleRequest(
       new Request('https://example.test/v1/sing-box/linux/example-subscription-id'),
-      { THREE_X_UI_SUB_BASE_URL: 'https://subscription.example.invalid/mainsub/' },
+      testEnv(),
       generator,
     );
 
@@ -45,28 +63,22 @@ describe('worker API', () => {
     expect(generator).toHaveBeenCalledWith({
       baseUrl: 'https://subscription.example.invalid/mainsub/',
       clientType: 'linux',
-      iosRoutingMode: 'native-bypass',
+      manifestUrl,
       subscriptionId: 'example-subscription-id',
     });
   });
 
-  it('passes the staging dual-stack mode into iOS generation', async () => {
+  it('passes the configured manifest URL into iOS generation', async () => {
     const generator = vi.fn((options: GenerateSubscriptionOptions) =>
       Promise.resolve({
-        config: composeSingBoxConfig([fakeCanonicalNode], options.clientType, {
-          ...(options.iosRoutingMode === undefined
-            ? {}
-            : { iosRoutingMode: options.iosRoutingMode }),
-        }),
+        config: composeSingBoxConfig([fakeCanonicalNode], options.clientType),
+        configuration: testConfiguration,
         metadata: {},
       }),
     );
     const response = await handleRequest(
       new Request('https://example.test/v1/sing-box/ios/example-subscription-id'),
-      {
-        THREE_X_UI_SUB_BASE_URL: 'https://subscription.example.invalid/mainsub/',
-        IOS_ROUTING_MODE: 'tun-dual-stack',
-      },
+      testEnv(),
       generator,
     );
 
@@ -74,7 +86,33 @@ describe('worker API', () => {
     expect(generator).toHaveBeenCalledWith({
       baseUrl: 'https://subscription.example.invalid/mainsub/',
       clientType: 'ios',
-      iosRoutingMode: 'tun-dual-stack',
+      manifestUrl,
+      subscriptionId: 'example-subscription-id',
+    });
+  });
+
+  it('passes the configured manifest URL into macOS generation', async () => {
+    const generator = vi.fn((options: GenerateSubscriptionOptions) =>
+      Promise.resolve({
+        config: composeSingBoxConfig([fakeCanonicalNode], options.clientType),
+        configuration: testConfiguration,
+        metadata: {},
+      }),
+    );
+    const response = await handleRequest(
+      new Request('https://example.test/v1/sing-box/macos/example-subscription-id'),
+      testEnv(),
+      generator,
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+
+    expect(body).toMatchObject({ dns: { final: 'dns-global' } });
+    expect(generator).toHaveBeenCalledWith({
+      baseUrl: 'https://subscription.example.invalid/mainsub/',
+      clientType: 'macos',
+      manifestUrl,
       subscriptionId: 'example-subscription-id',
     });
   });
@@ -108,6 +146,11 @@ describe('worker API', () => {
   });
 
   it.each<[ServiceErrorCode, number]>([
+    ['CONFIG_COMPOSITION_FAILED', 502],
+    ['CONFIG_INTEGRITY_FAILED', 502],
+    ['CONFIG_PROFILE_NOT_FOUND', 502],
+    ['CONFIG_SOURCE_INVALID', 502],
+    ['CONFIG_SOURCE_UNAVAILABLE', 502],
     ['INVALID_SUBSCRIPTION_ID', 400],
     ['SUBSCRIPTION_NOT_FOUND', 404],
     ['NO_COMPATIBLE_NODES', 422],
@@ -120,7 +163,7 @@ describe('worker API', () => {
   ])('maps %s to HTTP %i without exposing internal details', async (code, status) => {
     const response = await handleRequest(
       new Request('https://example.test/v1/sing-box/linux/example-id'),
-      { THREE_X_UI_SUB_BASE_URL: 'https://subscription.example.invalid/mainsub/' },
+      testEnv(),
       () => Promise.reject(new ServiceError(code, 'sensitive-internal-detail')),
     );
     const body = await response.text();
@@ -135,7 +178,7 @@ describe('worker API', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const response = await handleRequest(
       new Request('https://example.test/v1/sing-box/linux/example-id'),
-      { THREE_X_UI_SUB_BASE_URL: 'https://subscription.example.invalid/mainsub/' },
+      testEnv(),
       () => Promise.reject(new Error('sensitive-internal-detail')),
     );
     const body = await response.text();

@@ -20,6 +20,9 @@ pnpm release:check
 ```bash
 pnpm wrangler login
 pnpm wrangler secret put THREE_X_UI_SUB_BASE_URL --env staging
+pnpm config:validate
+pnpm config:build
+# bundle 所在提交合并后，运行 Publish staging configuration 工作流并合并其 PR
 pnpm deploy:staging
 ```
 
@@ -27,10 +30,13 @@ pnpm deploy:staging
 macOS 官方客户端重新导入 staging 返回的配置。涉及 outbound 网络能力时，同时验证
 TCP 和 UDP/WebRTC。确认 Cloudflare WAF 或 Rate Limiting 已限制失败枚举和异常频率。
 
-`IOS_ROUTING_MODE = tun-dual-stack` 已按 ADR-0015 批准用于 staging 与 production。
-应确认 iOS 配置无 `route_exclude_address`、DNS 保留 AAAA、direct 使用
-`network_strategy: hybrid`；macOS 配置则必须拒绝 AAAA，并在 DNS 与 R6 使用
-`ipv4_only`。
+旧 `IOS_ROUTING_MODE` 与 `MACOS_ROUTING_MODE` bindings 已删除；实际行为完全由 staging
+manifest 指向的 bundle 决定。应确认 iOS 配置无
+`route_exclude_address`、DNS 保留 AAAA、direct 使用
+`network_strategy: hybrid`。
+
+当前 macOS bundle 保持已验证的 `ipv4-compatible` 行为。若再次试验 FakeIP 双栈，必须
+通过新的 staging profile/bundle 发布并重新完成实机验证，不得依赖 Worker binding。
 
 ## Production
 
@@ -49,3 +55,34 @@ pnpm deploy:production
 - 项目使用 MIT License，版权主体为 `JAX1024Dev`。
 
 发布后记录 Cloudflare deployment version，并用不含 secret 的 request ID 验证错误日志。
+
+## 配置发布（重构目标）
+
+兼容既有 bundle schema 的 common、DNS、TUN、平台和路由变化不发布 Worker：
+
+```bash
+pnpm config:validate
+pnpm config:build
+pnpm config:publish:staging -- <40-character-bundle-commit>
+pnpm config:channels:check
+# 完成自动与实机验证后
+pnpm config:promote:production
+pnpm config:channels:check
+```
+
+日常操作优先使用 GitHub Actions 中的 `Publish staging configuration` 和
+`Promote production configuration`。两者均创建 PR；由于 `GITHUB_TOKEN` 创建的 PR 不会
+自动触发普通事件，工作流会显式 dispatch `CI` 到新分支。仓库必须允许 Actions 创建 PR，
+并为 `configuration-production` 环境配置必需审批人。
+
+发布要求：
+
+- source fragment、profile、生成 bundle 和 SHA-256 可追溯到同一提交；
+- 五个平台使用脱敏节点组装后通过 sing-box 1.14.0 `check`；
+- staging manifest 只指向完整 commit SHA URL；
+- production promotion 使用受保护环境并记录审批；
+- 不重新构建 bundle，production 必须推广 staging 已验证的同一摘要；
+- 回滚时只把 production manifest 指回上一个已知正常摘要。
+
+以下变化仍必须部署 Worker：manifest/bundle schema、字段所有权、组合算法、节点 parser、
+renderer、HTTP API、bindings 或安全策略。

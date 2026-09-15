@@ -3,6 +3,7 @@ export const singBoxTags = {
   block: 'block',
   direct: 'direct',
   dnsChina: 'dns-cn',
+  dnsFakeIp: 'dns-fakeip',
   dnsGlobal: 'dns-global',
   proxy: 'proxy',
   ruleSetGeoIpChina: 'geoip-cn',

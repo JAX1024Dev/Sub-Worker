@@ -18,19 +18,19 @@
     },
   },
   "vars": {
-    "IOS_ROUTING_MODE": "native-bypass",
+    "SING_BOX_CONFIG_MANIFEST_URL": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/main/example/sing-box/channels/staging.json",
   },
   "env": {
     "staging": {
       "name": "sub-worker-staging",
       "vars": {
-        "IOS_ROUTING_MODE": "tun-dual-stack",
+        "SING_BOX_CONFIG_MANIFEST_URL": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/main/example/sing-box/channels/staging.json",
       },
     },
     "production": {
       "name": "sub-worker-production",
       "vars": {
-        "IOS_ROUTING_MODE": "tun-dual-stack",
+        "SING_BOX_CONFIG_MANIFEST_URL": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/main/example/sing-box/channels/production.json",
       },
     },
   },

@@ -1,7 +1,11 @@
 import type { ClientType } from '../domain/canonical-node';
 import type { RouteConfig, TunInbound } from '../renderers/sing-box/types';
 import { chinaIpv6RouteExcludes } from '../config/rules/geoip-cn-ipv6';
-import { defaultIosRoutingMode, type IosRoutingMode, usesIosTunDualStack } from './network-policy';
+import {
+  resolveNetworkRoutingModes,
+  type NetworkRoutingOptions,
+  usesIosTunDualStack,
+} from './network-policy';
 
 export interface PlatformOverlay {
   inbounds: TunInbound[];
@@ -10,8 +14,9 @@ export interface PlatformOverlay {
 
 export function generatePlatformOverlay(
   clientType: ClientType,
-  iosRoutingMode: IosRoutingMode = defaultIosRoutingMode,
+  routing: NetworkRoutingOptions = {},
 ): PlatformOverlay {
+  const { iosRoutingMode } = resolveNetworkRoutingModes(routing);
   const iosTunDualStack = usesIosTunDualStack(clientType, iosRoutingMode);
   const tun: TunInbound = {
     type: 'tun',

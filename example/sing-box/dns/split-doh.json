@@ -1,0 +1,43 @@
+{
+  "servers": [
+    {
+      "type": "https",
+      "tag": "dns-cn",
+      "server": "223.5.5.5",
+      "server_port": 443,
+      "path": "/dns-query",
+      "tls": {
+        "enabled": true,
+        "server_name": "dns.alidns.com"
+      }
+    },
+    {
+      "type": "https",
+      "tag": "dns-global",
+      "server": "1.1.1.1",
+      "server_port": 443,
+      "path": "/dns-query",
+      "tls": {
+        "enabled": true,
+        "server_name": "cloudflare-dns.com"
+      },
+      "detour": "proxy"
+    }
+  ],
+  "rules": [
+    {
+      "rule_set": "geosite-cn",
+      "action": "route",
+      "server": "dns-cn"
+    },
+    {
+      "action": "route",
+      "server": "dns-global"
+    }
+  ],
+  "final": "dns-global",
+  "strategy": "prefer_ipv4",
+  "disable_cache": false,
+  "optimistic": false,
+  "timeout": "5s"
+}

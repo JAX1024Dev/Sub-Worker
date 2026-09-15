@@ -1,8 +1,9 @@
 import { singBoxTags } from '../../renderers/sing-box/tags';
 import type { ClientType } from '../../domain/canonical-node';
 import {
-  defaultIosRoutingMode,
-  type IosRoutingMode,
+  resolveNetworkRoutingModes,
+  type NetworkRoutingOptions,
+  usesMacosFakeIpDualStack,
   usesIpv4OnlyDns,
 } from '../../platforms/network-policy';
 import type { DnsConfig, DnsRule } from '../../renderers/sing-box/types';
@@ -22,13 +23,23 @@ export interface DnsFragment {
 
 export function generateDns(
   clientType: ClientType,
-  iosRoutingMode: IosRoutingMode = defaultIosRoutingMode,
+  routing: NetworkRoutingOptions = {},
 ): DnsFragment {
-  const forceIpv4 = usesIpv4OnlyDns(clientType, iosRoutingMode);
+  const { iosRoutingMode, macosRoutingMode } = resolveNetworkRoutingModes(routing);
+  const forceIpv4 = usesIpv4OnlyDns(clientType, iosRoutingMode, macosRoutingMode);
+  const macosFakeIpDualStack = usesMacosFakeIpDualStack(clientType, macosRoutingMode);
   const rules: DnsRule[] = [];
 
   if (forceIpv4) {
     rules.push({ query_type: ['AAAA'], action: 'reject', no_drop: true });
+  }
+
+  if (macosFakeIpDualStack) {
+    rules.push({
+      query_type: ['A', 'AAAA'],
+      action: 'route',
+      server: singBoxTags.dnsFakeIp,
+    });
   }
 
   rules.push(
@@ -43,6 +54,16 @@ export function generateDns(
   return {
     dns: {
       servers: [
+        ...(macosFakeIpDualStack
+          ? [
+              {
+                type: 'fakeip' as const,
+                tag: singBoxTags.dnsFakeIp,
+                inet4_range: '198.18.0.0/15' as const,
+                inet6_range: 'fc00::/18' as const,
+              },
+            ]
+          : []),
         {
           type: 'https',
           tag: singBoxTags.dnsChina,

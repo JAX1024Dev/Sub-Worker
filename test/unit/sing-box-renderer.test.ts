@@ -75,6 +75,46 @@ describe('sing-box renderer', () => {
     expect(rules).toContainEqual({ action: 'resolve', strategy: 'ipv4_only' });
   });
 
+  it('generates the macOS FakeIP dual-stack profile as one coherent policy', () => {
+    const config = composeSingBoxConfig([fakeCanonicalNode], 'macos', {
+      macosRoutingMode: 'fakeip-dual-stack',
+    });
+    const [tun] = config.inbounds;
+    const direct = config.outbounds.find((outbound) => outbound.type === 'direct');
+
+    expect(tun).toBeDefined();
+    expect(tun).not.toHaveProperty('route_exclude_address');
+    expect(config.dns.strategy).toBe('prefer_ipv4');
+    expect(config.dns.servers[0]).toEqual({
+      type: 'fakeip',
+      tag: 'dns-fakeip',
+      inet4_range: '198.18.0.0/15',
+      inet6_range: 'fc00::/18',
+    });
+    expect(config.dns.rules[0]).toEqual({
+      query_type: ['A', 'AAAA'],
+      action: 'route',
+      server: 'dns-fakeip',
+    });
+    expect(config.dns.rules).not.toContainEqual({
+      query_type: ['AAAA'],
+      action: 'reject',
+      no_drop: true,
+    });
+    expect(config.route.rules).toContainEqual({ action: 'resolve' });
+    expect(config.route.rules).not.toContainEqual({
+      action: 'resolve',
+      strategy: 'ipv4_only',
+    });
+    expect(config.route.rules).not.toContainEqual({
+      ip_version: 6,
+      action: 'route',
+      outbound: 'proxy',
+    });
+    expect(config.route.auto_detect_interface).toBe(true);
+    expect(direct).toMatchObject({ network_strategy: 'hybrid' });
+  });
+
   it('forces IPv4 DNS answers for iOS to avoid unreachable direct IPv6 routes', () => {
     const dns = generateDns('ios').dns;
 

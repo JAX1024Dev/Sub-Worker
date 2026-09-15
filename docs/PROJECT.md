@@ -1,10 +1,17 @@
 # 项目说明
 
+> 重构状态：本文描述目标形态。当前 production 仍使用 Worker 内置 Generator；远程配置
+> 链路必须按 [DEVELOPMENT.md](./DEVELOPMENT.md) 分阶段完成并通过 staging 后才能切换。
+
 ## 项目定位
 
-本项目是部署在 Cloudflare Workers 上的无状态订阅转换服务。它使用请求中的 3x-ui Subscription ID 实时获取原始节点，将兼容的 VLESS + REALITY 节点转换为适用于 sing-box 1.14.0 的完整配置。
+本项目是部署在 Cloudflare Workers 上的无状态订阅转换服务。它使用请求中的 3x-ui
+Subscription ID 实时获取节点，并将节点与 GitHub 发布的受控静态配置包组合，生成适用于
+sing-box 1.14.0 的完整配置。
 
-项目只负责配置获取、转换和组装，不承载代理流量，也不管理 3x-ui 用户。
+项目只负责配置获取、验证、转换和组装，不承载代理流量，也不管理 3x-ui 用户。静态配置
+与 Worker 代码分离，使兼容 schema 内的 TUN、DNS、路由和平台配置修改无需重新部署
+Worker。
 
 ## 项目背景
 
@@ -23,7 +30,8 @@
 3. Worker 使用同一个 Subscription ID 实时请求 3x-ui。
 4. Worker 解码订阅并解析 VLESS + REALITY 节点。
 5. 单个无效或不兼容节点被忽略；没有可用节点时返回错误。
-6. Worker 组装 sing-box 1.14.0 配置并返回 JSON。
+6. Worker 从受控 GitHub channel 获取对应客户端的不可变配置包并校验摘要。
+7. Worker 将节点、common、DNS、平台特殊配置和路由规则确定性组合后返回 JSON。
 
 ## 功能范围
 
@@ -63,13 +71,14 @@ MVP 只接受：
 
 ### 配置组成
 
-- 公共日志和入站配置。
+- GitHub 发布的公共日志和基础配置。
 - VLESS + REALITY 节点 outbounds。
 - VLESS TCP transport 节点同时承载 TCP 与 UDP，UDP 使用 XUDP 编码。
-- 手动 `selector` 和自动 `urltest`，默认使用自动选择组。
-- 按平台应用的 TUN Overlay。
+- 由远程 outbound policy 实例化的 `selector`、`urltest`、direct 和 block。
+- 按平台选择的 TUN 和系统集成配置。
 - [DNS 生成规格](./DNS.md)。
 - [路由规则生成规格](./RULES.md)。
+- [远程配置与组合规格](./CONFIGURATION.md)。
 
 ## 非功能要求
 
@@ -91,7 +100,8 @@ MVP 只接受：
 
 - 服务无状态，每个请求实时访问一次 3x-ui。
 - 获取、解析、中间模型和目标 renderer 相互隔离。
-- 平台差异使用 Overlay，不复制完整模板。
+- 静态配置使用可读片段和经过验证的不可变 bundle；平台差异不复制完整模板。
+- 配置发布与 Worker 发布相互独立，并具有 staging、production 和回滚路径。
 - 公开行为变更必须更新对应规格和 ADR。
 
 ## MVP
@@ -106,6 +116,7 @@ MVP 只接受：
 - 不缓存订阅或转换结果。
 - 输入限制、上游安全、日志脱敏和速率限制。
 - 单元测试、集成测试、配置检查和 staging 验证。
+- GitHub 静态配置 channel、bundle 校验和失败关闭。
 
 ## 后续范围
 
@@ -113,7 +124,7 @@ MVP 只接受：
 - 支持 VMess、Trojan、Shadowsocks、Hysteria2 等协议。
 - 新增 Mihomo renderer。
 - 支持多个受控 3x-ui 来源。
-- 路由、DNS 和节点选择策略版本化与可配置化。
+- 远程配置签名、公开 bundle 的 last-known-good 和多配置 channel。
 - 在重新评估安全模型后支持短时缓存或代理 token。
 - 管理界面、节点健康检查和更细粒度监控。
 
@@ -123,6 +134,7 @@ MVP 只接受：
 - 不修改用户、入站、流量或有效期。
 - 不提供代理转发服务。
 - 不接受任意上游 URL。
+- 不接受客户端指定任意配置仓库、URL、分支或路径。
 - 不存储用户订阅内容。
 - 不提供注册、支付或计费。
 - 不承诺兼容第三方 sing-box GUI。
@@ -143,6 +155,7 @@ MVP 只接受：
 ## 文档职责
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md)：系统结构与模块契约。
+- [CONFIGURATION.md](./CONFIGURATION.md)：GitHub 配置发布、获取和组合契约。
 - [RULES.md](./RULES.md)：可独立实现的 sing-box 路由生成规格。
 - [DNS.md](./DNS.md)：可独立实现的 sing-box DNS 生成规格。
 - [SECURITY.md](./SECURITY.md)：Worker 服务自身的安全要求。

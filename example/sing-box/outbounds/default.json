@@ -1,0 +1,26 @@
+{
+  "node_defaults": {
+    "packet_encoding": "xudp",
+    "domain_resolver": "dns-cn"
+  },
+  "urltest": {
+    "type": "urltest",
+    "tag": "auto",
+    "url": "https://www.gstatic.com/generate_204",
+    "interval": "3m",
+    "tolerance": 50
+  },
+  "selector": {
+    "type": "selector",
+    "tag": "proxy",
+    "default": "auto"
+  },
+  "direct": {
+    "type": "direct",
+    "tag": "direct"
+  },
+  "block": {
+    "type": "block",
+    "tag": "block"
+  }
+}

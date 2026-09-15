@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "client_type": "linux",
+  "fragments": {
+    "common": "common/base.json",
+    "dns": "dns/split-doh.json",
+    "platform": "platforms/linux.json",
+    "route": "rules/cn-direct.json",
+    "outbound_policy": "outbounds/default.json"
+  }
+}

@@ -1,8 +1,8 @@
 export interface SingBoxConfig {
   $schema: string;
   log: {
-    level: 'info';
-    timestamp: true;
+    level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'panic';
+    timestamp: boolean;
   };
   dns: DnsConfig;
   http_clients: HttpClient[];
@@ -16,17 +16,17 @@ export interface DnsConfig {
   rules: DnsRule[];
   final: string;
   strategy: 'prefer_ipv4' | 'ipv4_only';
-  disable_cache: false;
-  optimistic: false;
-  timeout: '5s';
+  disable_cache: boolean;
+  optimistic: boolean;
+  timeout: string;
 }
 
-export interface DnsServer {
+export interface HttpsDnsServer {
   type: 'https';
   tag: string;
   server: string;
-  server_port: 443;
-  path: '/dns-query';
+  server_port: number;
+  path: string;
   tls: {
     enabled: true;
     server_name: string;
@@ -34,8 +34,18 @@ export interface DnsServer {
   detour?: string;
 }
 
+export interface FakeIpDnsServer {
+  type: 'fakeip';
+  tag: string;
+  inet4_range: string;
+  inet6_range: string;
+}
+
+export type DnsServer = HttpsDnsServer | FakeIpDnsServer;
+
 export type DnsRule =
   | { query_type: ['AAAA']; action: 'reject'; no_drop: true }
+  | { query_type: ['A', 'AAAA']; action: 'route'; server: string }
   | { rule_set: string; action: 'route'; server: string }
   | { action: 'route'; server: string };
 
@@ -46,10 +56,10 @@ export interface HttpClient {
 
 export interface TunInbound {
   type: 'tun';
-  tag: 'tun-in';
+  tag: string;
   address: string[];
-  mtu: 9000;
-  stack: 'mixed';
+  mtu: number;
+  stack: 'system' | 'gvisor' | 'mixed';
   dns_mode: 'hijack';
   auto_route: true;
   route_exclude_address?: string[];
@@ -99,7 +109,7 @@ export type RouteRule =
   | { action: 'sniff' }
   | { protocol: 'dns'; action: 'hijack-dns' }
   | { ip_is_private: true; action: 'route'; outbound: string }
-  | { ip_version: 6; action: 'route'; outbound: string }
+  | { ip_version: 4 | 6; action: 'route'; outbound: string }
   | { rule_set: string; action: 'route'; outbound: string }
   | { action: 'resolve'; strategy?: 'ipv4_only' };
 

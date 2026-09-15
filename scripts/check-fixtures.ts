@@ -39,6 +39,23 @@ if (iosDualStackActual !== iosDualStackExpected) {
   staleFixtures.push('ios-tun-dual-stack.json');
 }
 
+const macosDualStackExpected = await format(
+  JSON.stringify(
+    composeSingBoxConfig([fakeCanonicalNode], 'macos', {
+      macosRoutingMode: 'fakeip-dual-stack',
+    }),
+  ),
+  { parser: 'json' },
+);
+const macosDualStackActual = await readFile(
+  resolve(fixtureDirectory, 'macos-dual-stack.json'),
+  'utf8',
+);
+
+if (macosDualStackActual !== macosDualStackExpected) {
+  staleFixtures.push('macos-dual-stack.json');
+}
+
 if (staleFixtures.length > 0) {
   throw new Error(
     `Generated fixtures are stale: ${staleFixtures.join(', ')}. Run pnpm fixtures:generate.`,

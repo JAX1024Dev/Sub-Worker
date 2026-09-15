@@ -2,9 +2,9 @@
 
 ## Project Structure & Module Organization
 
-Project requirements and boundaries live in `docs/PROJECT.md` and `docs/ARCHITECTURE.md`. Treat `docs/DNS.md` and `docs/RULES.md` as the single sources of truth for generated sing-box DNS and routing fragments. Security requirements are in `docs/SECURITY.md`, while accepted decisions are recorded under `docs/adr/`.
+Requirements and boundaries live in `docs/PROJECT.md` and `docs/ARCHITECTURE.md`. `docs/CONFIGURATION.md` defines remote composition. `docs/DNS.md` and `docs/RULES.md` define DNS and routing behavior. Security requirements are in `docs/SECURITY.md`; decisions are under `docs/adr/`.
 
-Place Worker code in `src/`, grouped by responsibility: `api/`, `application/`, `domain/`, `sources/three-x-ui/`, `parsers/`, `renderers/sing-box/`, `config/dns/`, `config/rules/`, and `platforms/`. Put tests in `test/unit/`, `test/integration/`, `test/e2e/`, and sanitized fixtures in `test/fixtures/`.
+Place Worker code in `src/` by responsibility: `api/`, `application/`, `domain/`, `sources/`, `parsers/`, `renderers/`, `config/`, and `security/`. Put editable fragments under `example/sing-box/`; never hand-edit `published/` bundles. Put tests in `test/unit/`, `test/integration/`, `test/e2e/`, and sanitized fixtures in `test/fixtures/`.
 
 ## Build, Test, and Development Commands
 
@@ -32,4 +32,4 @@ The repository has no commit history yet. Use Conventional Commits, for example 
 
 ## Security & Configuration
 
-Store `THREE_X_UI_SUB_BASE_URL` in `.dev.vars` locally and as a Cloudflare Secret in deployed environments. Never log full request paths, subscription IDs, links, or generated configurations. Do not introduce caching, new upstream hosts, protocols, or sing-box versions without updating the relevant specification and ADR first.
+Store `THREE_X_UI_SUB_BASE_URL` in `.dev.vars` locally and as a Cloudflare Secret in deployed environments. Never log full request paths, subscription IDs, links, generated configurations, or full remote-config URLs. Never let request input select a repository, branch, or bundle URL. Do not introduce caching, new upstream hosts, protocols, sing-box versions, or composition semantics without updating the relevant specification and ADR first.

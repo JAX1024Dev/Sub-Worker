@@ -1,0 +1,381 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://subworker.jax1024.com/schema/bundle.schema.json",
+  "title": "Sub-Worker immutable sing-box configuration bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "target", "fragments"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "version", "client_type"],
+      "properties": {
+        "format": { "const": "sing-box" },
+        "version": { "const": "1.14.0" },
+        "client_type": {
+          "enum": ["ios", "macos", "android", "windows", "linux"]
+        }
+      }
+    },
+    "fragments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["common", "dns", "platform", "route", "outbound_policy"],
+      "properties": {
+        "common": { "$ref": "#/definitions/common" },
+        "dns": { "$ref": "#/definitions/dns" },
+        "platform": { "$ref": "#/definitions/platform" },
+        "route": { "$ref": "#/definitions/routing" },
+        "outbound_policy": { "$ref": "#/definitions/outboundPolicy" }
+      }
+    }
+  },
+  "definitions": {
+    "common": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["$schema", "log"],
+      "properties": {
+        "$schema": { "const": "https://sing-box.sagernet.org/schema.json" },
+        "log": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "timestamp"],
+          "properties": {
+            "level": { "enum": ["trace", "debug", "info", "warn", "error", "fatal", "panic"] },
+            "timestamp": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "httpsDnsServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tag", "server", "server_port", "path", "tls"],
+      "properties": {
+        "type": { "const": "https" },
+        "tag": { "type": "string", "minLength": 1 },
+        "server": { "type": "string", "minLength": 1 },
+        "server_port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "path": { "type": "string", "pattern": "^/" },
+        "detour": { "type": "string", "minLength": 1 },
+        "tls": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "server_name"],
+          "properties": {
+            "enabled": { "const": true },
+            "server_name": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "fakeIpDnsServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tag", "inet4_range", "inet6_range"],
+      "properties": {
+        "type": { "const": "fakeip" },
+        "tag": { "type": "string", "minLength": 1 },
+        "inet4_range": { "type": "string", "minLength": 1 },
+        "inet6_range": { "type": "string", "minLength": 1 }
+      }
+    },
+    "dnsRule": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["query_type", "action", "no_drop"],
+          "properties": {
+            "query_type": { "const": ["AAAA"] },
+            "action": { "const": "reject" },
+            "no_drop": { "const": true }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["query_type", "action", "server"],
+          "properties": {
+            "query_type": { "const": ["A", "AAAA"] },
+            "action": { "const": "route" },
+            "server": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rule_set", "action", "server"],
+          "properties": {
+            "rule_set": { "type": "string", "minLength": 1 },
+            "action": { "const": "route" },
+            "server": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action", "server"],
+          "properties": {
+            "action": { "const": "route" },
+            "server": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "dns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "servers",
+        "rules",
+        "final",
+        "strategy",
+        "disable_cache",
+        "optimistic",
+        "timeout"
+      ],
+      "properties": {
+        "servers": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/definitions/httpsDnsServer" },
+              { "$ref": "#/definitions/fakeIpDnsServer" }
+            ]
+          }
+        },
+        "rules": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/dnsRule" } },
+        "final": { "type": "string", "minLength": 1 },
+        "strategy": { "enum": ["prefer_ipv4", "ipv4_only"] },
+        "disable_cache": { "type": "boolean" },
+        "optimistic": { "type": "boolean" },
+        "timeout": { "type": "string", "pattern": "^[1-9][0-9]*(ms|s|m)$" }
+      }
+    },
+    "tunInbound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tag", "address", "mtu", "stack", "dns_mode", "auto_route"],
+      "properties": {
+        "type": { "const": "tun" },
+        "tag": { "type": "string", "minLength": 1 },
+        "address": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "mtu": { "type": "integer", "minimum": 1280, "maximum": 65535 },
+        "stack": { "enum": ["system", "gvisor", "mixed"] },
+        "dns_mode": { "const": "hijack" },
+        "auto_route": { "const": true },
+        "strict_route": { "const": true },
+        "auto_redirect": { "const": true },
+        "route_exclude_address": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inbounds", "route"],
+      "properties": {
+        "inbounds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/tunInbound" }
+        },
+        "route": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "auto_detect_interface": { "const": true },
+            "override_android_vpn": { "const": false }
+          }
+        }
+      }
+    },
+    "routeRule": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action"],
+          "properties": { "action": { "const": "sniff" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["protocol", "action"],
+          "properties": { "protocol": { "const": "dns" }, "action": { "const": "hijack-dns" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ip_is_private", "action", "outbound"],
+          "properties": {
+            "ip_is_private": { "const": true },
+            "action": { "const": "route" },
+            "outbound": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ip_version", "action", "outbound"],
+          "properties": {
+            "ip_version": { "enum": [4, 6] },
+            "action": { "const": "route" },
+            "outbound": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rule_set", "action", "outbound"],
+          "properties": {
+            "rule_set": { "type": "string", "minLength": 1 },
+            "action": { "const": "route" },
+            "outbound": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action"],
+          "properties": {
+            "action": { "const": "resolve" },
+            "strategy": { "const": "ipv4_only" }
+          }
+        }
+      ]
+    },
+    "remoteRuleSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tag", "format", "url", "http_client"],
+      "properties": {
+        "type": { "const": "remote" },
+        "tag": { "type": "string", "minLength": 1 },
+        "format": { "const": "binary" },
+        "url": {
+          "type": "string",
+          "pattern": "^https://raw\\.githubusercontent\\.com/[^/]+/[^/]+/[0-9a-f]{40}/.+\\.srs$"
+        },
+        "http_client": { "type": "string", "minLength": 1 }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["http_clients", "route"],
+      "properties": {
+        "http_clients": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tag", "detour"],
+            "properties": {
+              "tag": { "type": "string", "minLength": 1 },
+              "detour": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "route": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rules",
+            "rule_set",
+            "final",
+            "default_http_client",
+            "default_domain_resolver"
+          ],
+          "properties": {
+            "rules": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/routeRule" }
+            },
+            "rule_set": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/remoteRuleSet" }
+            },
+            "final": { "type": "string", "minLength": 1 },
+            "default_http_client": { "type": "string", "minLength": 1 },
+            "default_domain_resolver": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "outboundPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_defaults", "urltest", "selector", "direct", "block"],
+      "properties": {
+        "node_defaults": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["packet_encoding", "domain_resolver"],
+          "properties": {
+            "packet_encoding": { "const": "xudp" },
+            "domain_resolver": { "type": "string", "minLength": 1 }
+          }
+        },
+        "urltest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "tag", "url", "interval", "tolerance"],
+          "properties": {
+            "type": { "const": "urltest" },
+            "tag": { "const": "auto" },
+            "url": { "type": "string", "pattern": "^https://" },
+            "interval": { "type": "string", "pattern": "^[1-9][0-9]*(s|m|h)$" },
+            "tolerance": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "selector": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "tag", "default"],
+          "properties": {
+            "type": { "const": "selector" },
+            "tag": { "const": "proxy" },
+            "default": { "const": "auto" }
+          }
+        },
+        "direct": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "tag"],
+          "properties": {
+            "type": { "const": "direct" },
+            "tag": { "const": "direct" },
+            "network_strategy": { "const": "hybrid" }
+          }
+        },
+        "block": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "tag"],
+          "properties": {
+            "type": { "const": "block" },
+            "tag": { "const": "block" }
+          }
+        }
+      }
+    }
+  }
+}

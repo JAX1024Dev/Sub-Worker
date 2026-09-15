@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://subworker.jax1024.com/schema/profile.schema.json",
+  "title": "Sub-Worker sing-box source profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "client_type", "fragments"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "client_type": {
+      "enum": ["ios", "macos", "android", "windows", "linux"]
+    },
+    "fragments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["common", "dns", "platform", "route", "outbound_policy"],
+      "properties": {
+        "common": { "type": "string", "pattern": "^common/[a-z0-9-]+\\.json$" },
+        "dns": { "type": "string", "pattern": "^dns/[a-z0-9-]+\\.json$" },
+        "platform": { "type": "string", "pattern": "^platforms/[a-z0-9-]+\\.json$" },
+        "route": { "type": "string", "pattern": "^rules/[a-z0-9-]+\\.json$" },
+        "outbound_policy": { "type": "string", "pattern": "^outbounds/[a-z0-9-]+\\.json$" }
+      }
+    }
+  }
+}

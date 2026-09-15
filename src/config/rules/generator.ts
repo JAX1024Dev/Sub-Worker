@@ -1,8 +1,8 @@
 import { singBoxTags } from '../../renderers/sing-box/tags';
 import type { ClientType } from '../../domain/canonical-node';
 import {
-  defaultIosRoutingMode,
-  type IosRoutingMode,
+  resolveNetworkRoutingModes,
+  type NetworkRoutingOptions,
   usesIosTunDualStack,
   usesIpv4OnlyDns,
 } from '../../platforms/network-policy';
@@ -31,10 +31,11 @@ function remoteRuleSet(tag: string, url: string): RemoteRuleSet {
 
 export function generateRules(
   clientType: ClientType,
-  iosRoutingMode: IosRoutingMode = defaultIosRoutingMode,
+  routing: NetworkRoutingOptions = {},
 ): RoutingFragment {
+  const { iosRoutingMode, macosRoutingMode } = resolveNetworkRoutingModes(routing);
   const iosTunDualStack = usesIosTunDualStack(clientType, iosRoutingMode);
-  const ipv4OnlyDns = usesIpv4OnlyDns(clientType, iosRoutingMode);
+  const ipv4OnlyDns = usesIpv4OnlyDns(clientType, iosRoutingMode, macosRoutingMode);
   const platformSafetyRules: RouteRule[] =
     clientType === 'ios' && !iosTunDualStack
       ? [{ ip_version: 6, action: 'route', outbound: singBoxTags.proxy }]

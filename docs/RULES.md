@@ -2,7 +2,9 @@
 
 ## 1. 目的与边界
 
-本文是 sing-box 1.14.0 路由模块的唯一详细规格，可用于单独实现或生成路由配置。
+本文是 sing-box 1.14.0 路由行为的唯一详细规格。重构后，路由 JSON 保存在
+`example/sing-box/rules/`，由 profile 选择并发布到远程 bundle；Worker 只验证、解析
+引用并组合，不再通过 TypeScript 条件生成规则。
 
 本文负责：
 
@@ -17,13 +19,13 @@
 
 - schema：sing-box 1.14.0。
 - 策略：国内直连，国外代理。
-- FakeIP：不使用。
+- FakeIP：仅 macOS `fakeip-dual-stack` 在 DNS 边界使用；路由阶段接收还原后的域名。
 - 旧版 `geosite`、`geoip` 数据库字段：不使用。
 - 旧版 rule `outbound` 字段：不使用；统一采用 `action: route`。
 
 ## 3. 输入契约
 
-路由生成器接收以下逻辑依赖：
+路由片段声明以下逻辑依赖：
 
 ```text
 directOutboundTag = "direct"
@@ -40,7 +42,8 @@ ruleSetHttpClientTag = "rules-via-proxy"
 - DNS server tag 必须由 DNS 模块提供。
 - 规则集 HTTP client 必须通过 `proxy` 下载远程规则。
 
-缺少任一依赖时，生成器必须失败，不得替换成“第一个 outbound”等隐式默认值。
+缺少任一依赖时，发布校验和运行时 Composer 都必须失败，不得替换成“第一个 outbound”等
+隐式默认值。
 
 ## 4. 规则集
 
@@ -79,7 +82,7 @@ match: protocol = dns
 action: hijack-dns
 ```
 
-该规则的需求来自 DNS 模块，但由路由生成器输出。
+该规则的需求来自 DNS 模块，但由路由片段提供。
 
 ### R3：已知私网目标直连
 
@@ -92,7 +95,7 @@ action: route → direct
 
 ### I1：iOS TUN 内公网 IPv6 代理保护
 
-仅当 `clientType = ios` 且 `IOS_ROUTING_MODE = native-bypass` 时，在 R3 之后生成：
+仅由 iOS `native-bypass` profile 选择的路由片段在 R3 之后包含：
 
 ```text
 match: ip_version = 6
@@ -126,12 +129,13 @@ action: route → proxy
 match: unconditional non-final rule
 action: resolve
 server: omitted
-strategy: ipv4_only # macOS 与 iOS native-bypass；其他情况省略
+strategy: ipv4_only # macOS ipv4-compatible 与 iOS native-bypass；其他情况省略
 ```
 
 不指定 server，使域名目标进入 [DNS.md](./DNS.md) 定义的 DNS rules；IP 目标不需要解析。该 action 是 non-final，处理后继续匹配后续 IP 规则。
-macOS 与 iOS `native-bypass` 显式使用 `ipv4_only`，与 DNS 模块的 AAAA 拒绝策略形成
-纵深保护。iOS `tun-dual-stack` 省略该限制，使解析到的 IPv6 继续由 R8 和 Final 分流。
+macOS `ipv4-compatible` 与 iOS `native-bypass` 显式使用 `ipv4_only`，与 DNS 模块的
+AAAA 拒绝策略形成纵深保护。iOS `tun-dual-stack` 和 macOS `fakeip-dual-stack` 省略
+该限制；macOS FakeIP 连接会先恢复域名，再进入 R4/R5 或 R6。
 
 ### R7：解析后的私网目标直连
 
@@ -183,26 +187,32 @@ sing-box 1.14.0 要求域名拨号存在显式 resolver。该默认值服务直�
 - iOS `tun-dual-stack`：不生成显式旁路或 I1；IPv4 与 IPv6 均进入 TUN，中国
   IP 命中 R8 → direct，其他 IP 命中 Final → proxy。direct outbound 使用
   `network_strategy: hybrid` 试验 Apple Packet Tunnel 的外部接口拨号。
-- 除已记录的 iOS 原生旁路和 I1 外，平台差异只能调整 route 级系统集成字段和 R6
-  的解析策略。不得按应用动态端口或观测到的临时服务 IP 硬编码分流。
+- macOS `fakeip-dual-stack`：不生成显式旁路或 IPv6 safety rule；应用获得的 IPv4/IPv6
+  FakeIP 均进入 TUN，sing-box 恢复域名后执行 R4/R5。direct 使用 `dns-cn` 获取真实
+  A/AAAA 候选，并配合 `network_strategy: hybrid` 选择 Apple 网络接口；原始 IP 字面量
+  仍按 R8/Final 分流，且无法进行跨地址族回退。
+- 除已记录的 iOS 原生旁路、I1 和 macOS 双栈试验外，平台差异只能调整 route 级系统
+  集成字段和 R6 的解析策略。不得按应用动态端口或观测到的临时服务 IP 硬编码分流。
 
-## 7. 输出契约
+## 7. 远程片段契约
 
-路由生成器输出：
+路由源文件输出：
 
 ```text
-generateRules(clientType: ClientType, iosRoutingMode: IosRoutingMode) -> RoutingFragment {
+RoutingFragment {
+  schema_version: 1
   http_clients: HttpClient[]
   route: {
     rules: RouteRule[]
     rule_set: RuleSet[]
     final: "proxy"
-    platformOptions?: object
   }
+  requires: { outboundTags: string[]; dnsServerTags: string[] }
 }
 ```
 
-合并器必须检测 tag 冲突。路由生成器不得修改节点 outbounds 或 DNS server 内容。
+平台 route 选项属于 platform fragment，不放入本文件。合并器必须检测 tag 冲突和引用
+缺失。路由片段不得修改节点 outbounds、DNS server 或 TUN 内容。
 
 ## 8. 失败策略
 
@@ -223,11 +233,14 @@ generateRules(clientType: ClientType, iosRoutingMode: IosRoutingMode) -> Routing
 - 直接 CN IP → direct。
 - 私网 IP 和解析到私网的域名 → direct。
 - 未分类域名和非 CN IP → proxy。
-- iOS R6 使用 `ipv4_only`，其他平台的 R6 不携带 `strategy`。
+- iOS `native-bypass` 与 macOS `ipv4-compatible` 的 R6 使用 `ipv4_only`；macOS
+  `fakeip-dual-stack`、iOS `tun-dual-stack` 与其他平台的 R6 不携带 `strategy`。
 - iOS 生成 `auto_detect_interface = true`，显式中国 IPv6 `route_exclude_address` 与 I1。
 - iOS `tun-dual-stack` 不生成 IPv6 排除、I1 或 R6 `ipv4_only`，并为 direct 生成
   `network_strategy: hybrid`。
-- macOS DNS 与 R6 使用 `ipv4_only`，避免 IPv4-only 物理网络上的应用选中不可达 AAAA。
+- macOS 默认 DNS 与 R6 使用 `ipv4_only`，避免 IPv4-only 物理网络上的应用选中不可达
+  AAAA；macOS `fakeip-dual-stack` 使用双地址族 FakeIP、R6 不携带 `strategy`，并为
+  direct 生成 `network_strategy: hybrid`。
 - iOS 中国 IPv6 → TUN 原生旁路，中国 IPv4 → TUN 内 direct；仍进入 TUN 的公网 IPv6
   → proxy。
 - 显式 IPv6 CIDR 必须与固定版本 `geoip-cn` 一致，并覆盖实机日志中确认的
@@ -235,7 +248,7 @@ generateRules(clientType: ClientType, iosRoutingMode: IosRoutingMode) -> Routing
 - 其他平台中国 IPv4/IPv6 → direct，其他 IPv4/IPv6 → proxy。
 - DNS 请求 → `hijack-dns`。
 - 规则集均使用固定 URL 和显式 HTTP client。
-- 五个平台输出通过 sing-box 1.14.0 `check`。
+- 五个平台及 macOS 双栈试验 fixture 输出通过 sing-box 1.14.0 `check`。
 
 实机基线：官方 iOS 客户端在 IPv6 Wi-Fi 下必须能同时访问 YouTube、微信、抖音、
 滴滴主应用及滴滴钱包。中国 IPv6 应在进入 TUN 前旁路，不能与同一会话的中国 IPv4
@@ -245,6 +258,8 @@ generateRules(clientType: ClientType, iosRoutingMode: IosRoutingMode) -> Routing
 
 - 广告拦截、应用分流和自定义域名规则应插入具名策略阶段，不能直接改变 final。
 - 每次顺序变化都需要更新本文件、golden fixture 和 ADR。
+- 兼容当前 schema 的规则调整通过 GitHub staging/production channel 发布，不需要部署
+  Worker；字段模型或组合语义变化仍需要代码发布。
 - 未来支持本地或内嵌 rule-set 时，可替换来源实现，但 tag 和业务语义应保持稳定。
 
 ## 11. 参考

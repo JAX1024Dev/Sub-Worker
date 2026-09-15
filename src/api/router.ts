@@ -4,7 +4,6 @@ import {
   type GeneratedSubscription,
 } from '../application/generate-subscription';
 import { ServiceError, type ServiceErrorCode } from '../domain/errors';
-import { resolveIosRoutingMode } from '../platforms/network-policy';
 import { parseClientType, validateSubscriptionId } from '../security/subscription-input';
 import type { SubscriptionMetadata } from '../sources/three-x-ui/subscription-document';
 
@@ -51,6 +50,11 @@ function errorResponse(
 
 function serviceErrorStatus(code: ServiceErrorCode): number {
   switch (code) {
+    case 'CONFIG_COMPOSITION_FAILED':
+    case 'CONFIG_INTEGRITY_FAILED':
+    case 'CONFIG_PROFILE_NOT_FOUND':
+    case 'CONFIG_SOURCE_INVALID':
+    case 'CONFIG_SOURCE_UNAVAILABLE':
     case 'INVALID_BASE_URL':
     case 'INVALID_SUBSCRIPTION':
     case 'UPSTREAM_ERROR':
@@ -70,6 +74,12 @@ function serviceErrorStatus(code: ServiceErrorCode): number {
 
 function publicErrorMessage(code: ServiceErrorCode): string {
   switch (code) {
+    case 'CONFIG_COMPOSITION_FAILED':
+    case 'CONFIG_INTEGRITY_FAILED':
+    case 'CONFIG_PROFILE_NOT_FOUND':
+    case 'CONFIG_SOURCE_INVALID':
+    case 'CONFIG_SOURCE_UNAVAILABLE':
+      return 'Configuration source is unavailable.';
     case 'INVALID_SUBSCRIPTION_ID':
       return 'Subscription ID is invalid.';
     case 'NO_COMPATIBLE_NODES':
@@ -107,8 +117,7 @@ function successHeaders(
 
 export async function handleRequest(
   request: Request,
-  env: Pick<Cloudflare.Env, 'THREE_X_UI_SUB_BASE_URL'> &
-    Partial<Record<'IOS_ROUTING_MODE', string>>,
+  env: Pick<Cloudflare.Env, 'SING_BOX_CONFIG_MANIFEST_URL' | 'THREE_X_UI_SUB_BASE_URL'>,
   generator: GenerateSubscription = generateSubscription,
 ): Promise<Response> {
   const requestId = crypto.randomUUID();
@@ -163,7 +172,7 @@ export async function handleRequest(
     const result = await generator({
       baseUrl: env.THREE_X_UI_SUB_BASE_URL,
       clientType,
-      iosRoutingMode: resolveIosRoutingMode(env.IOS_ROUTING_MODE),
+      manifestUrl: env.SING_BOX_CONFIG_MANIFEST_URL,
       subscriptionId,
     });
     return jsonResponse(result.config, 200, successHeaders(clientType, requestId, result.metadata));

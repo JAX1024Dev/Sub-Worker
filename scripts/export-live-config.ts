@@ -41,8 +41,9 @@ if (!clientType) {
 }
 
 const baseUrl = await loadLocalValue('THREE_X_UI_SUB_BASE_URL');
+const manifestUrl = await loadLocalValue('SING_BOX_CONFIG_MANIFEST_URL');
 const subscriptionId = await loadLocalValue('LIVE_TEST_SUBSCRIPTION_ID');
-const result = await generateSubscription({ baseUrl, subscriptionId, clientType });
+const result = await generateSubscription({ baseUrl, manifestUrl, subscriptionId, clientType });
 const outputDirectory = resolve(import.meta.dirname, '../.local/generated');
 const outputPath = resolve(outputDirectory, `sing-box-${clientType}.json`);
 

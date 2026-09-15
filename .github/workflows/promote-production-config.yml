@@ -1,0 +1,60 @@
+name: Promote production configuration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: promote-production-configuration
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: configuration-production
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          ref: main
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Promote verified staging manifest
+        run: |
+          pnpm config:channels:check
+          pnpm config:promote:production
+          pnpm config:channels:check
+      - name: Create production promotion pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- example/sing-box/channels/production.json; then
+            echo "Production manifest already matches staging."
+            exit 0
+          fi
+          staging_commit=$(git rev-parse --short=12 HEAD)
+          branch="config/production-${staging_commit}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$branch"
+          git add example/sing-box/channels/production.json
+          git commit -m "chore(config): promote production bundle"
+          git push origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "chore(config): promote production bundle" \
+            --body "Promotes the exact staging bundle URLs and SHA-256 digests to production without rebuilding."
+          gh workflow run ci.yml --ref "$branch"

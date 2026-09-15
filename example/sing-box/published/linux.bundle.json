@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "target": {
+    "format": "sing-box",
+    "version": "1.14.0",
+    "client_type": "linux"
+  },
+  "fragments": {
+    "common": {
+      "$schema": "https://sing-box.sagernet.org/schema.json",
+      "log": { "level": "info", "timestamp": true }
+    },
+    "dns": {
+      "servers": [
+        {
+          "type": "https",
+          "tag": "dns-cn",
+          "server": "223.5.5.5",
+          "server_port": 443,
+          "path": "/dns-query",
+          "tls": { "enabled": true, "server_name": "dns.alidns.com" }
+        },
+        {
+          "type": "https",
+          "tag": "dns-global",
+          "server": "1.1.1.1",
+          "server_port": 443,
+          "path": "/dns-query",
+          "tls": { "enabled": true, "server_name": "cloudflare-dns.com" },
+          "detour": "proxy"
+        }
+      ],
+      "rules": [
+        { "rule_set": "geosite-cn", "action": "route", "server": "dns-cn" },
+        { "action": "route", "server": "dns-global" }
+      ],
+      "final": "dns-global",
+      "strategy": "prefer_ipv4",
+      "disable_cache": false,
+      "optimistic": false,
+      "timeout": "5s"
+    },
+    "platform": {
+      "inbounds": [
+        {
+          "type": "tun",
+          "tag": "tun-in",
+          "address": ["172.19.0.1/30", "fdfe:dcba:9876::1/126"],
+          "mtu": 9000,
+          "stack": "mixed",
+          "dns_mode": "hijack",
+          "auto_route": true,
+          "strict_route": true,
+          "auto_redirect": true
+        }
+      ],
+      "route": { "auto_detect_interface": true }
+    },
+    "route": {
+      "http_clients": [{ "tag": "rules-via-proxy", "detour": "proxy" }],
+      "route": {
+        "rules": [
+          { "action": "sniff" },
+          { "protocol": "dns", "action": "hijack-dns" },
+          { "ip_is_private": true, "action": "route", "outbound": "direct" },
+          { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
+          {
+            "rule_set": "geosite-non-cn",
+            "action": "route",
+            "outbound": "proxy"
+          },
+          { "action": "resolve" },
+          { "ip_is_private": true, "action": "route", "outbound": "direct" },
+          { "rule_set": "geoip-cn", "action": "route", "outbound": "direct" }
+        ],
+        "rule_set": [
+          {
+            "type": "remote",
+            "tag": "geosite-cn",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/5a5a9abc760d2653948c9549c4cb56cc3279e1aa/geosite-geolocation-cn.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "geosite-non-cn",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/5a5a9abc760d2653948c9549c4cb56cc3279e1aa/geosite-geolocation-%21cn.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "geoip-cn",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/b9c5e675b4d5359d4b47f4434fa7ae77e9991306/geoip-cn.srs",
+            "http_client": "rules-via-proxy"
+          }
+        ],
+        "final": "proxy",
+        "default_http_client": "rules-via-proxy",
+        "default_domain_resolver": "dns-cn"
+      }
+    },
+    "outbound_policy": {
+      "node_defaults": {
+        "packet_encoding": "xudp",
+        "domain_resolver": "dns-cn"
+      },
+      "urltest": {
+        "type": "urltest",
+        "tag": "auto",
+        "url": "https://www.gstatic.com/generate_204",
+        "interval": "3m",
+        "tolerance": 50
+      },
+      "selector": { "type": "selector", "tag": "proxy", "default": "auto" },
+      "direct": { "type": "direct", "tag": "direct" },
+      "block": { "type": "block", "tag": "block" }
+    }
+  }
+}

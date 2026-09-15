@@ -2,7 +2,34 @@ import type { CanonicalNode } from '../../domain/canonical-node';
 import { singBoxTags } from './tags';
 import type { Outbound, VlessOutbound } from './types';
 
-const reservedTags = new Set(Object.values(singBoxTags));
+export interface OutboundRenderPolicy {
+  nodeDefaults: {
+    packetEncoding: 'xudp';
+    domainResolver: string;
+  };
+  urltest: {
+    type: 'urltest';
+    tag: string;
+    url: string;
+    interval: string;
+    tolerance: number;
+  };
+  selector: {
+    type: 'selector';
+    tag: string;
+    default: string;
+  };
+  direct: {
+    type: 'direct';
+    tag: string;
+    network_strategy?: 'hybrid';
+  };
+  block: {
+    type: 'block';
+    tag: string;
+  };
+  reservedTags: readonly string[];
+}
 
 function isIpAddress(value: string): boolean {
   if (value.includes(':')) {
@@ -18,7 +45,7 @@ function isIpAddress(value: string): boolean {
   );
 }
 
-function createNodeTags(nodes: CanonicalNode[]): string[] {
+function createNodeTags(nodes: CanonicalNode[], reservedTags: readonly string[]): string[] {
   const used = new Set<string>(reservedTags);
 
   return nodes.map((node, index) => {
@@ -34,16 +61,20 @@ function createNodeTags(nodes: CanonicalNode[]): string[] {
   });
 }
 
-function renderNode(node: CanonicalNode, tag: string): VlessOutbound {
+function renderNode(
+  node: CanonicalNode,
+  tag: string,
+  defaults: OutboundRenderPolicy['nodeDefaults'],
+): VlessOutbound {
   return {
     type: 'vless',
     tag,
     server: node.server,
     server_port: node.serverPort,
     uuid: node.uuid,
-    packet_encoding: 'xudp',
+    packet_encoding: defaults.packetEncoding,
     ...(node.flow === undefined ? {} : { flow: node.flow }),
-    ...(isIpAddress(node.server) ? {} : { domain_resolver: singBoxTags.dnsChina }),
+    ...(isIpAddress(node.server) ? {} : { domain_resolver: defaults.domainResolver }),
     tls: {
       enabled: true,
       server_name: node.reality.serverName,
@@ -68,43 +99,69 @@ export interface GenerateOutboundsOptions {
   directNetworkStrategy?: 'hybrid';
 }
 
-export function generateOutbounds(
+export function generateOutboundsFromPolicy(
   nodes: CanonicalNode[],
-  options: GenerateOutboundsOptions = {},
+  policy: OutboundRenderPolicy,
 ): OutboundFragment {
   if (nodes.length === 0) {
     throw new Error('Cannot generate outbounds without compatible nodes.');
   }
 
-  const nodeTags = createNodeTags(nodes);
-  const nodeOutbounds = nodes.map((node, index) => renderNode(node, nodeTags[index] ?? ''));
+  const nodeTags = createNodeTags(nodes, policy.reservedTags);
+  const nodeOutbounds = nodes.map((node, index) =>
+    renderNode(node, nodeTags[index] ?? '', policy.nodeDefaults),
+  );
 
   return {
     nodeTags,
     outbounds: [
       ...nodeOutbounds,
       {
-        type: 'urltest',
-        tag: singBoxTags.automatic,
+        type: policy.urltest.type,
+        tag: policy.urltest.tag,
         outbounds: nodeTags,
-        url: 'https://www.gstatic.com/generate_204',
-        interval: '3m',
-        tolerance: 50,
+        url: policy.urltest.url,
+        interval: policy.urltest.interval,
+        tolerance: policy.urltest.tolerance,
       },
       {
-        type: 'selector',
-        tag: singBoxTags.proxy,
-        outbounds: [singBoxTags.automatic, ...nodeTags],
-        default: singBoxTags.automatic,
+        type: policy.selector.type,
+        tag: policy.selector.tag,
+        outbounds: [policy.urltest.tag, ...nodeTags],
+        default: policy.selector.default,
       },
-      {
-        type: 'direct',
-        tag: singBoxTags.direct,
-        ...(options.directNetworkStrategy === undefined
-          ? {}
-          : { network_strategy: options.directNetworkStrategy }),
-      },
-      { type: 'block', tag: singBoxTags.block },
+      { ...policy.direct },
+      { ...policy.block },
     ],
   };
+}
+
+export function generateOutbounds(
+  nodes: CanonicalNode[],
+  options: GenerateOutboundsOptions = {},
+): OutboundFragment {
+  return generateOutboundsFromPolicy(nodes, {
+    nodeDefaults: { packetEncoding: 'xudp', domainResolver: singBoxTags.dnsChina },
+    urltest: {
+      type: 'urltest',
+      tag: singBoxTags.automatic,
+      url: 'https://www.gstatic.com/generate_204',
+      interval: '3m',
+      tolerance: 50,
+    },
+    selector: {
+      type: 'selector',
+      tag: singBoxTags.proxy,
+      default: singBoxTags.automatic,
+    },
+    direct: {
+      type: 'direct',
+      tag: singBoxTags.direct,
+      ...(options.directNetworkStrategy === undefined
+        ? {}
+        : { network_strategy: options.directNetworkStrategy }),
+    },
+    block: { type: 'block', tag: singBoxTags.block },
+    reservedTags: Object.values(singBoxTags),
+  });
 }

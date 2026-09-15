@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "client_type": "android",
+  "fragments": {
+    "common": "common/base.json",
+    "dns": "dns/split-doh.json",
+    "platform": "platforms/android.json",
+    "route": "rules/cn-direct.json",
+    "outbound_policy": "outbounds/default.json"
+  }
+}

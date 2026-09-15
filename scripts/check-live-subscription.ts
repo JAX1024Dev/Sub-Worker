@@ -37,8 +37,14 @@ async function loadLocalValue(name: string): Promise<string> {
 }
 
 const baseUrl = await loadLocalValue('THREE_X_UI_SUB_BASE_URL');
+const manifestUrl = await loadLocalValue('SING_BOX_CONFIG_MANIFEST_URL');
 const subscriptionId = await loadLocalValue('LIVE_TEST_SUBSCRIPTION_ID');
-const result = await generateSubscription({ baseUrl, subscriptionId, clientType: 'macos' });
+const result = await generateSubscription({
+  baseUrl,
+  manifestUrl,
+  subscriptionId,
+  clientType: 'macos',
+});
 const temporaryDirectory = await mkdtemp(resolve(tmpdir(), 'sub-worker-live-check-'));
 const configPath = resolve(temporaryDirectory, 'macos.json');
 

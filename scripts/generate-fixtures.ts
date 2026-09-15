@@ -15,6 +15,15 @@ for (const clientType of clientTypes) {
   await writeFile(outputPath, contents, 'utf8');
 }
 
+const macosDualStack = composeSingBoxConfig([fakeCanonicalNode], 'macos', {
+  macosRoutingMode: 'fakeip-dual-stack',
+});
+await writeFile(
+  resolve(outputDirectory, 'macos-dual-stack.json'),
+  await format(JSON.stringify(macosDualStack), { parser: 'json' }),
+  'utf8',
+);
+
 const iosTunDualStack = composeSingBoxConfig([fakeCanonicalNode], 'ios', {
   iosRoutingMode: 'tun-dual-stack',
 });
