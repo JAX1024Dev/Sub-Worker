@@ -21,7 +21,7 @@ describe('configured 3x-ui subscription', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(config).toMatchObject({
-      dns: { final: 'dns-global', strategy: 'ipv4_only' },
+      dns: { final: 'dns-global', strategy: 'prefer_ipv4' },
       route: { final: 'proxy', auto_detect_interface: true },
     });
 
@@ -38,28 +38,19 @@ describe('configured 3x-ui subscription', () => {
       throw new Error('Expected a route rules array.');
     }
 
-    expect(config.dns.rules).toContainEqual({
-      query_type: ['AAAA'],
-      action: 'reject',
-      no_drop: true,
+    expect(config.dns.rules).not.toContainEqual(
+      expect.objectContaining({ query_type: ['AAAA'], action: 'reject' }),
+    );
+    expect(config.route.rules).toContainEqual({ action: 'resolve' });
+    expect(config.route.rules).not.toContainEqual(
+      expect.objectContaining({ ip_version: 6, outbound: 'proxy' }),
+    );
+    expect(config.inbounds[0]).toMatchObject({
+      type: 'tun',
+      address: ['172.19.0.1/30', 'fdfe:dcba:9876::1/126'],
     });
-    expect(config.route.rules).toContainEqual({ action: 'resolve', strategy: 'ipv4_only' });
-    expect(config.route.rules).toContainEqual({
-      ip_version: 6,
-      action: 'route',
-      outbound: 'proxy',
-    });
-    expect(config.inbounds[0]).toMatchObject({ type: 'tun' });
-    if (
-      !isRecord(config.inbounds[0]) ||
-      !isUnknownArray(config.inbounds[0].route_exclude_address)
-    ) {
-      throw new Error('Expected explicit iOS route exclusions.');
-    }
-    expect(config.inbounds[0].route_exclude_address).toContain('2402:4e00::/32');
-    expect(config.inbounds[0].route_exclude_address).toContain('2402:840::/32');
-    expect(config.inbounds[0].route_exclude_address).toContain('2409:8000::/20');
     expect(config.inbounds[0]).not.toHaveProperty('route_exclude_address_set');
+    expect(config.inbounds[0]).not.toHaveProperty('route_exclude_address');
 
     const nodeOutbounds = config.outbounds.filter(
       (outbound): outbound is Record<string, unknown> =>
@@ -70,5 +61,8 @@ describe('configured 3x-ui subscription', () => {
       expect(outbound.packet_encoding).toBe('xudp');
       expect(outbound).not.toHaveProperty('network');
     }
+    expect(config.outbounds).toContainEqual(
+      expect.objectContaining({ type: 'direct', tag: 'direct', network_strategy: 'hybrid' }),
+    );
   });
 });
