@@ -27,7 +27,7 @@
         "enabled": true,
         "server_name": "cloudflare-dns.com"
       },
-      "detour": "proxy"
+      "detour": "🚀 节点选择"
     }
   ],
   "rules": [

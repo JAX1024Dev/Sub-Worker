@@ -25,6 +25,7 @@ export interface CommonConfigFragment {
     level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'panic';
     timestamp: boolean;
   };
+  experimental?: { cache_file: { enabled: true } };
 }
 
 export interface PlatformConfigFragment {
@@ -57,9 +58,15 @@ export interface OutboundPolicyFragment {
   };
   selector: {
     type: 'selector';
-    tag: 'proxy';
+    tag: string;
     default: 'auto';
   };
+  service_selectors?: {
+    type: 'selector';
+    tag: string;
+    default: 'global' | 'direct' | 'block' | 'uk';
+    choices: ('global' | 'nodes' | 'direct' | 'block' | 'uk')[];
+  }[];
   direct: {
     type: 'direct';
     tag: 'direct';

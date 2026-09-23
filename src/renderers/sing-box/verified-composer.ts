@@ -15,6 +15,7 @@ function collectReservedTags(bundle: RemoteConfigBundle): string[] {
     bundle.fragments.outbound_policy.direct.tag,
     bundle.fragments.outbound_policy.block.tag,
     ...(bundle.fragments.outbound_policy.region_selectors ?? []).map((selector) => selector.tag),
+    ...(bundle.fragments.outbound_policy.service_selectors ?? []).map((selector) => selector.tag),
   ];
 }
 
@@ -36,6 +37,7 @@ function buildPlatformRoute(
 export function composeVerifiedSingBoxConfig(
   nodes: CanonicalNode[],
   bundle: RemoteConfigBundle,
+  cacheId?: string,
 ): SingBoxConfig {
   if (nodes.length === 0) {
     throw new ServiceError('NO_COMPATIBLE_NODES', 'No compatible nodes are available.');
@@ -52,6 +54,9 @@ export function composeVerifiedSingBoxConfig(
       selector: policy.selector,
       direct: policy.direct,
       block: policy.block,
+      ...(policy.service_selectors === undefined
+        ? {}
+        : { serviceSelectors: policy.service_selectors }),
       reservedTags: collectReservedTags(bundle),
       ...(policy.region_selectors === undefined
         ? {}
@@ -82,6 +87,16 @@ export function composeVerifiedSingBoxConfig(
         ...bundle.fragments.route.route,
         ...platformRoute,
       },
+      ...(bundle.fragments.common.experimental === undefined
+        ? {}
+        : {
+            experimental: {
+              cache_file: {
+                enabled: true as const,
+                ...(cacheId === undefined ? {} : { cache_id: cacheId }),
+              },
+            },
+          }),
     };
   } catch (error) {
     throw new ServiceError('CONFIG_COMPOSITION_FAILED', 'Configuration composition failed.', {

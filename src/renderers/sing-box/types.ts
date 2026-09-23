@@ -9,6 +9,7 @@ export interface SingBoxConfig {
   inbounds: TunInbound[];
   outbounds: Outbound[];
   route: RouteConfig;
+  experimental?: { cache_file: { enabled: true; cache_id?: string } };
 }
 
 export interface DnsConfig {

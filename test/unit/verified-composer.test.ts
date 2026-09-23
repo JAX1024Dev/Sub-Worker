@@ -6,7 +6,6 @@ import linuxBundleSource from '../../example/sing-box/published/linux.bundle.jso
 import macosBundleSource from '../../example/sing-box/published/macos.bundle.json';
 import windowsBundleSource from '../../example/sing-box/published/windows.bundle.json';
 import type { ClientType } from '../../src/domain/canonical-node';
-import { composeSingBoxConfig } from '../../src/renderers/sing-box/composer';
 import { composeVerifiedSingBoxConfig } from '../../src/renderers/sing-box/verified-composer';
 import { parseRemoteConfigBundle } from '../../src/sources/remote-config/validator';
 import { fakeCanonicalNode } from '../fixtures/fake-node';
@@ -19,52 +18,56 @@ const bundleSources: Array<readonly [ClientType, unknown]> = [
   ['linux', linuxBundleSource],
 ];
 
-function legacyProductionConfig(clientType: ClientType) {
-  return composeSingBoxConfig(
-    [fakeCanonicalNode],
-    clientType,
-    clientType === 'ios' ? { iosRoutingMode: 'tun-dual-stack' } : {},
-  );
-}
-
 describe('verified sing-box composer', () => {
   it.each(bundleSources)(
-    'preserves baseline behavior outside service routing for %s',
+    'builds independent service selectors and overseas fallback for %s',
     (clientType, source) => {
       const bundle = parseRemoteConfigBundle(source, clientType);
-      const config = composeVerifiedSingBoxConfig([fakeCanonicalNode], bundle);
-      const legacy = legacyProductionConfig(clientType);
+      const config = composeVerifiedSingBoxConfig([fakeCanonicalNode], bundle, 'test-cache');
       expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
         type: 'selector',
         outbounds: ['block'],
         default: 'block',
       });
+      expect(config.route.final).toBe('🚀 节点选择');
+      expect(config.experimental?.cache_file).toEqual({ enabled: true, cache_id: 'test-cache' });
       expect(config.route.rules).toContainEqual({
         domain_suffix: ['kraken.com', 'krak.app'],
         action: 'route',
-        outbound: 'uk',
+        outbound: '💷 Kraken/Krak',
       });
-      expect(config.dns.rules).toContainEqual({
-        rule_set: 'apple-cn',
-        action: 'route',
-        server: 'dns-cn',
+      expect(config.outbounds.find((outbound) => outbound.tag === 'Ⓜ️ 微软')).toMatchObject({
+        default: 'direct',
       });
-      expect(config.dns.rules).toContainEqual({
-        rule_set: 'microsoft-cn',
-        action: 'route',
-        server: 'dns-cn',
+      expect(config.outbounds.find((outbound) => outbound.tag === '🍎 苹果')).toMatchObject({
+        default: '🚀 节点选择',
       });
-      const routeTags = config.route.rules.map((rule) =>
-        'domain_suffix' in rule ? 'kraken' : 'rule_set' in rule ? rule.rule_set : '',
-      );
-      expect(routeTags.indexOf('kraken')).toBeLessThan(routeTags.indexOf('geosite-cn'));
-      expect(routeTags.indexOf('apple-cn')).toBeLessThan(routeTags.indexOf('apple'));
-      expect(routeTags.indexOf('microsoft-cn')).toBeLessThan(routeTags.indexOf('microsoft'));
-      config.outbounds = config.outbounds.filter((outbound) => outbound.tag !== 'uk');
-      config.route.rules = legacy.route.rules;
-      config.route.rule_set = legacy.route.rule_set;
-      config.dns.rules = legacy.dns.rules;
-      expect(config).toEqual(legacy);
+      expect(config.outbounds.find((outbound) => outbound.tag === '🛑 广告拦截')).toMatchObject({
+        default: 'block',
+      });
+      expect(config.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak')).toMatchObject({
+        default: 'uk',
+      });
+      for (const tag of [
+        '🤖 AI',
+        '▶️ YouTube',
+        '🎬 流媒体',
+        '🔍 谷歌',
+        '✈️ Telegram',
+        '🍎 苹果',
+        'Ⓜ️ 微软',
+        '🛑 广告拦截',
+      ]) {
+        expect(config.outbounds.find((outbound) => outbound.tag === tag)).toMatchObject({
+          type: 'selector',
+        });
+      }
+      const routes = config.route.rules;
+      const index = (ruleSet: string) =>
+        routes.findIndex((rule) => 'rule_set' in rule && rule.rule_set === ruleSet);
+      expect(index('ads')).toBeLessThan(index('geosite-cn'));
+      expect(index('youtube')).toBeLessThan(index('google'));
+      expect(index('microsoft')).toBeLessThan(index('geosite-cn'));
     },
   );
 
@@ -78,11 +81,13 @@ describe('verified sing-box composer', () => {
       ],
       bundle,
     );
-    expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
-      type: 'selector',
-      outbounds: ['UK London', '🇬🇧 英国'],
-      default: 'UK London',
-    });
+    const uk = config.outbounds.find((outbound) => outbound.tag === 'uk');
+    expect(uk).toMatchObject({ type: 'selector' });
+    if (uk?.type !== 'selector') throw new Error('UK selector missing');
+    expect(uk.outbounds).toHaveLength(2);
+    expect(uk.outbounds[0]).toMatch(/^UK London \[[0-9a-f]{8}\]$/u);
+    expect(uk.outbounds[1]).toMatch(/^🇬🇧 英国 \[[0-9a-f]{8}\]$/u);
+    expect(uk.default).toBe(uk.outbounds[0]);
   });
 
   it('uses bundle-owned logging, urltest, and outbound policy values', () => {
@@ -120,10 +125,38 @@ describe('verified sing-box composer', () => {
       .filter((outbound) => outbound.type === 'vless')
       .map((outbound) => outbound.tag);
 
-    expect(nodeTags).toEqual(['auto (2)', 'auto (3)', 'dns-cn (2)', 'node-4']);
+    expect(nodeTags[0]).toMatch(/^auto \[[0-9a-f]{8}\]$/u);
+    expect(nodeTags[1]).toBe(`${String(nodeTags[0])} (2)`);
+    expect(nodeTags[2]).toMatch(/^dns-cn \[[0-9a-f]{8}\]$/u);
+    expect(nodeTags[3]).toMatch(/^node \[[0-9a-f]{8}\]$/u);
     expect(new Set(config.outbounds.map((outbound) => outbound.tag)).size).toBe(
       config.outbounds.length,
     );
+  });
+
+  it('keeps node choices stable when upstream node order changes', () => {
+    const bundle = parseRemoteConfigBundle(iosBundleSource, 'ios');
+    const first = {
+      ...fakeCanonicalNode,
+      name: 'USA',
+      uuid: '11111111-1111-4111-8111-111111111111',
+    };
+    const second = {
+      ...fakeCanonicalNode,
+      name: 'UK London',
+      uuid: '22222222-2222-4222-8222-222222222222',
+    };
+    const a = composeVerifiedSingBoxConfig([first, second], bundle);
+    const b = composeVerifiedSingBoxConfig([second, first], bundle);
+    const tags = (config: typeof a) =>
+      config.outbounds
+        .filter((outbound) => outbound.type === 'vless')
+        .map((outbound) => outbound.tag);
+    expect(new Set(tags(a))).toEqual(new Set(tags(b)));
+    const ai = a.outbounds.find((outbound) => outbound.tag === '🤖 AI');
+    expect(ai).toMatchObject({ type: 'selector', default: '🚀 节点选择' });
+    if (ai?.type !== 'selector') throw new Error('AI selector missing');
+    expect(ai.outbounds).toEqual(expect.arrayContaining(tags(a)));
   });
 
   it('does not mutate the verified bundle or canonical nodes', () => {

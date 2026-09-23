@@ -1,0 +1,51 @@
+name: Propose rule-set update
+
+on:
+  schedule:
+    - cron: '17 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node --import tsx scripts/update-service-rulesets.ts --update
+      - name: Install sing-box 1.14.0
+        env:
+          ARCHIVE_SHA256: 2375de6999f4f56ab46b4fc5ddf26a6aba1d3e61a0f4e7ddec2f4690457d5f63
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/SagerNet/sing-box/releases/download/v1.14.0/sing-box-1.14.0-linux-amd64.tar.gz \
+            --output "$RUNNER_TEMP/sing-box.tar.gz"
+          echo "$ARCHIVE_SHA256  $RUNNER_TEMP/sing-box.tar.gz" | sha256sum --check
+          tar --extract --gzip --file "$RUNNER_TEMP/sing-box.tar.gz" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/sing-box-1.14.0-linux-amd64" >> "$GITHUB_PATH"
+      - run: pnpm check
+      - name: Open review PR when pinned content changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- example/sing-box/rules example/sing-box/published; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c automation/dustinwin-rulesets
+          git add example/sing-box/rules example/sing-box/published
+          git commit -m 'chore(rules): update pinned DustinWin rule sets'
+          git push --force-with-lease origin automation/dustinwin-rulesets
+          gh pr create --base main --head automation/dustinwin-rulesets --title 'chore(rules): update pinned DustinWin rule sets' --body 'Daily upstream pin update. Review category changes, CI, and real-device behavior before promotion.' || gh pr view automation/dustinwin-rulesets --json url

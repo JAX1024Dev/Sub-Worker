@@ -21,12 +21,20 @@
         "enabled": true,
         "server_name": "cloudflare-dns.com"
       },
-      "detour": "proxy"
+      "detour": "🚀 节点选择"
     }
   ],
   "rules": [
-    { "rule_set": "apple-cn", "action": "route", "server": "dns-cn" },
-    { "rule_set": "microsoft-cn", "action": "route", "server": "dns-cn" },
+    {
+      "rule_set": "apple",
+      "action": "route",
+      "server": "dns-global"
+    },
+    {
+      "rule_set": "microsoft",
+      "action": "route",
+      "server": "dns-cn"
+    },
     {
       "rule_set": "geosite-cn",
       "action": "route",

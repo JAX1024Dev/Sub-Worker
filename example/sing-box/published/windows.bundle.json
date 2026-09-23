@@ -8,7 +8,8 @@
   "fragments": {
     "common": {
       "$schema": "https://sing-box.sagernet.org/schema.json",
-      "log": { "level": "info", "timestamp": true }
+      "log": { "level": "info", "timestamp": true },
+      "experimental": { "cache_file": { "enabled": true } }
     },
     "dns": {
       "servers": [
@@ -27,12 +28,12 @@
           "server_port": 443,
           "path": "/dns-query",
           "tls": { "enabled": true, "server_name": "cloudflare-dns.com" },
-          "detour": "proxy"
+          "detour": "🚀 节点选择"
         }
       ],
       "rules": [
-        { "rule_set": "apple-cn", "action": "route", "server": "dns-cn" },
-        { "rule_set": "microsoft-cn", "action": "route", "server": "dns-cn" },
+        { "rule_set": "apple", "action": "route", "server": "dns-global" },
+        { "rule_set": "microsoft", "action": "route", "server": "dns-cn" },
         { "rule_set": "geosite-cn", "action": "route", "server": "dns-cn" },
         { "action": "route", "server": "dns-global" }
       ],
@@ -58,36 +59,51 @@
       "route": { "auto_detect_interface": true }
     },
     "route": {
-      "http_clients": [{ "tag": "rules-via-proxy", "detour": "proxy" }],
+      "http_clients": [{ "tag": "rules-via-proxy", "detour": "🚀 节点选择" }],
       "route": {
         "rules": [
           { "action": "sniff" },
           { "protocol": "dns", "action": "hijack-dns" },
-          { "ip_is_private": true, "action": "route", "outbound": "direct" },
+          { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },
           {
             "domain_suffix": ["kraken.com", "krak.app"],
             "action": "route",
-            "outbound": "uk"
+            "outbound": "💷 Kraken/Krak"
           },
-          { "rule_set": "apple-cn", "action": "route", "outbound": "direct" },
+          { "rule_set": "ai", "action": "route", "outbound": "🤖 AI" },
+          {
+            "rule_set": "youtube",
+            "action": "route",
+            "outbound": "▶️ YouTube"
+          },
+          {
+            "rule_set": "netflix",
+            "action": "route",
+            "outbound": "🎥 Netflix"
+          },
+          { "rule_set": "disney", "action": "route", "outbound": "📽️ Disney+" },
+          {
+            "rule_set": "spotify",
+            "action": "route",
+            "outbound": "🎵 Spotify"
+          },
+          { "rule_set": "tiktok", "action": "route", "outbound": "🎵 TikTok" },
+          { "rule_set": "media", "action": "route", "outbound": "🎬 流媒体" },
+          {
+            "rule_set": "telegram",
+            "action": "route",
+            "outbound": "✈️ Telegram"
+          },
+          { "rule_set": "apple", "action": "route", "outbound": "🍎 苹果" },
           {
             "rule_set": "microsoft-cn",
             "action": "route",
-            "outbound": "direct"
+            "outbound": "Ⓜ️ 微软"
           },
-          { "rule_set": "apple", "action": "route", "outbound": "proxy" },
-          { "rule_set": "microsoft", "action": "route", "outbound": "proxy" },
-          { "rule_set": "google", "action": "route", "outbound": "proxy" },
-          { "rule_set": "youtube", "action": "route", "outbound": "proxy" },
-          { "rule_set": "openai", "action": "route", "outbound": "proxy" },
-          { "rule_set": "netflix", "action": "route", "outbound": "proxy" },
-          { "rule_set": "telegram", "action": "route", "outbound": "proxy" },
+          { "rule_set": "microsoft", "action": "route", "outbound": "Ⓜ️ 微软" },
+          { "rule_set": "github", "action": "route", "outbound": "💻 GitHub" },
+          { "rule_set": "google", "action": "route", "outbound": "🔍 谷歌" },
           { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
-          {
-            "rule_set": "geosite-non-cn",
-            "action": "route",
-            "outbound": "proxy"
-          },
           { "action": "resolve" },
           { "ip_is_private": true, "action": "route", "outbound": "direct" },
           { "rule_set": "geoip-cn", "action": "route", "outbound": "direct" }
@@ -102,13 +118,6 @@
           },
           {
             "type": "remote",
-            "tag": "geosite-non-cn",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/5a5a9abc760d2653948c9549c4cb56cc3279e1aa/geosite-geolocation-%21cn.srs",
-            "http_client": "rules-via-proxy"
-          },
-          {
-            "type": "remote",
             "tag": "geoip-cn",
             "format": "binary",
             "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/b9c5e675b4d5359d4b47f4434fa7ae77e9991306/geoip-cn.srs",
@@ -116,16 +125,58 @@
           },
           {
             "type": "remote",
-            "tag": "apple-cn",
+            "tag": "ads",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/apple@cn.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/ads.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
-            "tag": "microsoft-cn",
+            "tag": "ai",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/microsoft@cn.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/ai.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "youtube",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/youtube.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "media",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/media.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "netflix",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/netflix.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "disney",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/disney.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "spotify",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/spotify.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "tiktok",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/tiktok.srs",
             "http_client": "rules-via-proxy"
           },
           {
@@ -144,30 +195,16 @@
           },
           {
             "type": "remote",
+            "tag": "microsoft-cn",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/microsoft@cn.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
             "tag": "google",
             "format": "binary",
             "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/google.srs",
-            "http_client": "rules-via-proxy"
-          },
-          {
-            "type": "remote",
-            "tag": "youtube",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/youtube.srs",
-            "http_client": "rules-via-proxy"
-          },
-          {
-            "type": "remote",
-            "tag": "openai",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/openai.srs",
-            "http_client": "rules-via-proxy"
-          },
-          {
-            "type": "remote",
-            "tag": "netflix",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/netflix.srs",
             "http_client": "rules-via-proxy"
           },
           {
@@ -176,9 +213,16 @@
             "format": "binary",
             "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/telegram.srs",
             "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "github",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/github.srs",
+            "http_client": "rules-via-proxy"
           }
         ],
-        "final": "proxy",
+        "final": "🚀 节点选择",
         "default_http_client": "rules-via-proxy",
         "default_domain_resolver": "dns-cn"
       }
@@ -195,13 +239,103 @@
         "interval": "3m",
         "tolerance": 50
       },
-      "selector": { "type": "selector", "tag": "proxy", "default": "auto" },
+      "selector": {
+        "type": "selector",
+        "tag": "🚀 节点选择",
+        "default": "auto"
+      },
       "region_selectors": [
         {
           "type": "selector",
           "tag": "uk",
           "region": "uk",
           "on_missing": "block"
+        }
+      ],
+      "service_selectors": [
+        {
+          "type": "selector",
+          "tag": "🤖 AI",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "▶️ YouTube",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "🎬 流媒体",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "🔍 谷歌",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "✈️ Telegram",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "🍎 苹果",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "Ⓜ️ 微软",
+          "default": "direct",
+          "choices": ["direct", "global", "nodes"]
+        },
+        {
+          "type": "selector",
+          "tag": "🛑 广告拦截",
+          "default": "block",
+          "choices": ["block", "direct", "global", "nodes"]
+        },
+        {
+          "type": "selector",
+          "tag": "🎥 Netflix",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "📽️ Disney+",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "🎵 Spotify",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "🎵 TikTok",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "💻 GitHub",
+          "default": "global",
+          "choices": ["global", "nodes", "direct"]
+        },
+        {
+          "type": "selector",
+          "tag": "💷 Kraken/Krak",
+          "default": "uk",
+          "choices": ["uk", "global", "nodes", "direct"]
         }
       ],
       "direct": { "type": "direct", "tag": "direct" },

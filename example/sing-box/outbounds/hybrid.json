@@ -12,7 +12,7 @@
   },
   "selector": {
     "type": "selector",
-    "tag": "proxy",
+    "tag": "🚀 节点选择",
     "default": "auto"
   },
   "region_selectors": [
@@ -21,6 +21,92 @@
       "tag": "uk",
       "region": "uk",
       "on_missing": "block"
+    }
+  ],
+  "service_selectors": [
+    {
+      "type": "selector",
+      "tag": "🤖 AI",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "▶️ YouTube",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "🎬 流媒体",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "🔍 谷歌",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "✈️ Telegram",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "🍎 苹果",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "Ⓜ️ 微软",
+      "default": "direct",
+      "choices": ["direct", "global", "nodes"]
+    },
+    {
+      "type": "selector",
+      "tag": "🛑 广告拦截",
+      "default": "block",
+      "choices": ["block", "direct", "global", "nodes"]
+    },
+    {
+      "type": "selector",
+      "tag": "🎥 Netflix",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "📽️ Disney+",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "🎵 Spotify",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "🎵 TikTok",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "💻 GitHub",
+      "default": "global",
+      "choices": ["global", "nodes", "direct"]
+    },
+    {
+      "type": "selector",
+      "tag": "💷 Kraken/Krak",
+      "default": "uk",
+      "choices": ["uk", "global", "nodes", "direct"]
     }
   ],
   "direct": {

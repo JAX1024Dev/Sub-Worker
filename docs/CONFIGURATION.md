@@ -66,7 +66,7 @@ example/
 `common/`、`dns/`、`platforms/`、`rules/`、`outbounds/` 是人工维护的源文件。
 `published/` 只由 `pnpm config:build` 生成，不得直接编辑。`profiles/*.json` 只声明每个
 平台选择哪些源片段。Phase A 已实现源文件 schema 校验、引用检查、语义检查、确定性构建及
-与旧 Generator 的等价检查；channel manifest 将在 staging 发布阶段生成，仓库不保存虚假
+与旧 Generator 的平台字段回归检查；channel manifest 在 staging 发布阶段生成，仓库不保存虚假
 占位 URL 或摘要。
 
 Phase B 已实现独立的 Remote Config Source：它验证 manifest 与 bundle URL，按流读取并
@@ -77,7 +77,7 @@ Phase B 已实现独立的 Remote Config Source：它验证 manifest 与 bundle 
 Phase C 已实现确定性 Composer：它只读取每个 owner 的固定字段，并在 outbound 插槽中
 加入实时节点、urltest 和 selector tag 数组，不执行通用 deep merge。节点 tag 会避开
 bundle 中全部已声明 tag，输入 bundle 与节点保持不变。离线 `config:diff` 已使用该真实
-Composer 对比五个平台的当前 production 输出。运行时不再回退到旧 Generator。
+Composer 对比五个平台的平台字段与服务组不变量。运行时不再回退到旧 Generator。
 
 ## 4. Channel Manifest
 
@@ -144,6 +144,11 @@ allowlist 合入。数组只能由对应 owner 完整提供，或由 Composer �
 selector；没有匹配节点时 selector 只包含 `block`。标签是管理员声明，不是出口 IP 的
 地理位置证明；上线前须在实机检查英国出口 IP。
 
+`service_selectors` 定义独立可切换服务组及默认选项；Worker 展开每组的实时节点列表，
+并以节点身份的稳定摘要生成 tag。`common.experimental.cache_file.enabled` 由源片段开启，
+Worker 为每个 Subscription ID/平台派生独立 `cache_id`，不将 ID 明文放入配置。
+选择由客户端本地持久化，不进入 Worker 存储。详见 [RULES.md](./RULES.md)。
+
 ## 6. 请求数据流
 
 ```text
@@ -167,6 +172,7 @@ Subscription ID、节点、请求头和 3x-ui URL绝不发送给 GitHub。GitHub
 ## 7. 缓存与更新语义
 
 - 用户订阅、节点和最终配置继续完全不缓存。
+- 客户端本地 `cache_file` 仅保存 selector 选择与远程规则集；与 Worker 不缓存订阅是不同边界。
 - 第一阶段不使用 Cache API、KV 或内存全局缓存保存远程 bundle。
 - immutable bundle 可由 GitHub CDN 正常缓存；manifest 请求要求重新验证。
 - GitHub 更新的生效时间取决于其 CDN，不承诺强一致或秒级生效。

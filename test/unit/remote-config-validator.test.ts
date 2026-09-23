@@ -40,7 +40,7 @@ describe('remote configuration runtime validator', () => {
     const duplicate = structuredClone(iosBundle);
     const selector = duplicate.fragments.outbound_policy.region_selectors[0];
     if (selector === undefined) throw new Error('Missing UK selector');
-    selector.tag = 'proxy';
+    selector.tag = '🚀 节点选择';
     expect(() => parseRemoteConfigBundle(duplicate, 'ios')).toThrow(
       expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
     );

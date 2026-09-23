@@ -45,8 +45,17 @@ export async function generateSubscription(
     options.configFetcher,
   );
 
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(options.subscriptionId),
+  );
+  const cacheId = `sw-${options.clientType}-${Array.from(new Uint8Array(digest))
+    .slice(0, 16)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')}`;
+
   return {
-    config: composeVerifiedSingBoxConfig(loaded.nodes, remoteConfig.bundle),
+    config: composeVerifiedSingBoxConfig(loaded.nodes, remoteConfig.bundle, cacheId),
     configuration: {
       bundleSha256: remoteConfig.bundleSha256,
       channel: remoteConfig.channel,

@@ -77,6 +77,7 @@ interface OutboundPolicyFragment {
   direct: TaggedValue & Record<string, unknown>;
   block: TaggedValue & Record<string, unknown>;
   region_selectors?: Array<TaggedValue & Record<string, unknown>>;
+  service_selectors?: Array<TaggedValue & { choices: string[]; default: string }>;
 }
 
 interface CommonFragment {
@@ -241,12 +242,24 @@ function validateSemantics(bundle: ConfigBundle): void {
       outboundPolicy.direct,
       outboundPolicy.block,
       ...(outboundPolicy.region_selectors ?? []),
+      ...(outboundPolicy.service_selectors ?? []),
     ],
     'Fixed outbounds',
   );
 
-  for (const required of ['auto', 'proxy', 'direct', 'block']) {
+  for (const required of ['auto', outboundPolicy.selector.tag, 'direct', 'block']) {
     requireTag(outboundTags, required, 'Outbound policy');
+  }
+  for (const selector of outboundPolicy.service_selectors ?? []) {
+    if (!selector.choices.includes(selector.default)) {
+      throw new Error(`Service selector ${selector.tag} default must be a choice.`);
+    }
+    if (
+      selector.choices.includes('uk') &&
+      !outboundPolicy.region_selectors?.some((region) => region.tag === 'uk')
+    ) {
+      throw new Error(`Service selector ${selector.tag} requires a UK region selector.`);
+    }
   }
   requireTag(inboundTags, 'tun-in', 'Platform');
   requireTag(dnsTags, dns.final, 'DNS final');

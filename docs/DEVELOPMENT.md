@@ -282,7 +282,7 @@ Worker 代码部署与配置发布是两条流程：只有 TypeScript、schema �
 
 - **已完成**：创建 `example/sing-box/`、manifest/bundle/profile schema 和脱敏片段。
 - **已完成**：实现离线 build/validate/diff，Worker 运行路径未修改。
-- **已完成**：五个平台 bundle 与当前 production Generator 行为等价。
+- **已完成**：五个平台 bundle 的平台字段回归与服务组不变量检查。
 
 ### 阶段 B：远程配置适配器
 
@@ -296,7 +296,8 @@ Worker 代码部署与配置发布是两条流程：只有 TypeScript、schema �
 - **已完成**：实现 `CanonicalNode[] + VerifiedProfileBundle` 的显式字段组装。
 - **已完成**：节点、urltest 和 selector 动态 tag 数组通过受控插槽生成。
 - **已完成**：配置中的节点默认值、固定出站、DNS、TUN 和 route 均由 bundle 提供。
-- **已完成**：五平台新 Composer 与当前 production Generator 输出逐字段等价。
+- **已完成**：五平台新 Composer 的平台字段回归、服务组与 route final 检查。
+- **已完成**：独立服务 selector、客户端 `cache_file` 和订阅隔离的 `cache_id`；DustinWin 固定提交每日检查并生成待审 PR。
 - 旧生成链路暂时保留用于 golden diff，不作为未来运行时 fallback。
 
 ### 阶段 D：staging 切换

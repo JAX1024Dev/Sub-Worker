@@ -39,6 +39,19 @@
       "required": ["$schema", "log"],
       "properties": {
         "$schema": { "const": "https://sing-box.sagernet.org/schema.json" },
+        "experimental": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cache_file"],
+          "properties": {
+            "cache_file": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled"],
+              "properties": { "enabled": { "const": true } }
+            }
+          }
+        },
         "log": {
           "type": "object",
           "additionalProperties": false,
@@ -367,7 +380,7 @@
           "required": ["type", "tag", "default"],
           "properties": {
             "type": { "const": "selector" },
-            "tag": { "const": "proxy" },
+            "tag": { "enum": ["proxy", "🚀 节点选择"] },
             "default": { "const": "auto" }
           }
         },
@@ -402,6 +415,28 @@
               "tag": { "type": "string", "minLength": 1 },
               "region": { "const": "uk" },
               "on_missing": { "const": "block" }
+            }
+          }
+        },
+        "service_selectors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "tag", "default", "choices"],
+            "properties": {
+              "type": { "const": "selector" },
+              "tag": { "type": "string", "minLength": 1 },
+              "default": { "enum": ["global", "direct", "block", "uk"] },
+              "choices": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 5,
+                "uniqueItems": true,
+                "items": { "enum": ["global", "nodes", "direct", "block", "uk"] }
+              }
             }
           }
         }

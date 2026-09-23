@@ -93,11 +93,17 @@ export function parseChannelManifest(value: unknown): ChannelManifest {
 function isCommonFragment(value: unknown): value is CommonConfigFragment {
   if (
     !isRecord(value) ||
-    !hasKeys(value, ['$schema', 'log']) ||
+    !hasKeys(value, ['$schema', 'log'], ['experimental']) ||
     value.$schema !== 'https://sing-box.sagernet.org/schema.json' ||
     !isRecord(value.log) ||
     !hasKeys(value.log, ['level', 'timestamp']) ||
-    typeof value.log.timestamp !== 'boolean'
+    typeof value.log.timestamp !== 'boolean' ||
+    (value.experimental !== undefined &&
+      (!isRecord(value.experimental) ||
+        !hasKeys(value.experimental, ['cache_file']) ||
+        !isRecord(value.experimental.cache_file) ||
+        !hasKeys(value.experimental.cache_file, ['enabled']) ||
+        value.experimental.cache_file.enabled !== true))
   ) {
     return false;
   }
@@ -366,7 +372,7 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
     !hasKeys(
       value,
       ['node_defaults', 'urltest', 'selector', 'direct', 'block'],
-      ['region_selectors'],
+      ['region_selectors', 'service_selectors'],
     ) ||
     !isRecord(value.node_defaults) ||
     !hasKeys(value.node_defaults, ['packet_encoding', 'domain_resolver']) ||
@@ -386,7 +392,7 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
     !isRecord(value.selector) ||
     !hasKeys(value.selector, ['type', 'tag', 'default']) ||
     value.selector.type !== 'selector' ||
-    value.selector.tag !== 'proxy' ||
+    (value.selector.tag !== 'proxy' && value.selector.tag !== '🚀 节点选择') ||
     value.selector.default !== 'auto' ||
     !isRecord(value.direct) ||
     !hasKeys(value.direct, ['type', 'tag'], ['network_strategy']) ||
@@ -408,6 +414,26 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
             isNonEmptyString(selector.tag) &&
             selector.region === 'uk' &&
             selector.on_missing === 'block',
+        ))) ||
+    (value.service_selectors !== undefined &&
+      (!Array.isArray(value.service_selectors) ||
+        value.service_selectors.length === 0 ||
+        value.service_selectors.length > 24 ||
+        !value.service_selectors.every(
+          (selector) =>
+            isRecord(selector) &&
+            hasKeys(selector, ['type', 'tag', 'default', 'choices']) &&
+            selector.type === 'selector' &&
+            isNonEmptyString(selector.tag) &&
+            ['global', 'direct', 'block', 'uk'].includes(String(selector.default)) &&
+            Array.isArray(selector.choices) &&
+            selector.choices.length > 0 &&
+            selector.choices.length <= 5 &&
+            selector.choices.every((choice) =>
+              ['global', 'nodes', 'direct', 'block', 'uk'].includes(String(choice)),
+            ) &&
+            new Set(selector.choices).size === selector.choices.length &&
+            selector.choices.includes(selector.default),
         )))
   ) {
     return false;
@@ -426,6 +452,7 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
     bundle.fragments.outbound_policy.direct.tag,
     bundle.fragments.outbound_policy.block.tag,
     ...(bundle.fragments.outbound_policy.region_selectors ?? []).map((selector) => selector.tag),
+    ...(bundle.fragments.outbound_policy.service_selectors ?? []).map((selector) => selector.tag),
   ];
   const outboundTags: Set<string> = new Set(tags);
 
@@ -448,6 +475,14 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
   for (const server of bundle.fragments.dns.servers) {
     if ('detour' in server && !outboundTags.has(server.detour)) {
       throw new ServiceError('CONFIG_SOURCE_INVALID', 'DNS detour reference is invalid.');
+    }
+  }
+  for (const selector of bundle.fragments.outbound_policy.service_selectors ?? []) {
+    if (
+      selector.choices.includes('uk') &&
+      !bundle.fragments.outbound_policy.region_selectors?.length
+    ) {
+      throw new ServiceError('CONFIG_SOURCE_INVALID', 'Service selector UK choice is unavailable.');
     }
   }
   for (const rule of bundle.fragments.dns.rules) {

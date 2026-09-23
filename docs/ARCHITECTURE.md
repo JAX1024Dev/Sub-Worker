@@ -94,7 +94,7 @@ API Router
 
 ### Sing-box Composer
 
-Phase C 已实现并进入 Worker 请求路径，同时继续由离线等价检查和单元测试覆盖。
+Phase C 已实现并进入 Worker 请求路径，同时由平台字段回归、服务组不变量和单元测试覆盖。
 
 Composer 接收：
 
@@ -133,7 +133,7 @@ Composer 必须检测重复 tag、保留 tag 占用、引用缺失、版本不�
 - `channels/`：staging/production 指针。
 - `published/`：CI 生成的不可变 bundle。
 
-当前 Phase A 已完成 schema、源片段、五平台 bundle 构建与旧 Generator 等价检查。后续 CI
+当前 Phase A 已完成 schema、源片段、五平台 bundle 构建与平台字段回归检查。后续 CI
 负责 fixture 组装、sing-box 1.14.0 `check`、摘要生成和 channel
 promotion。production channel 必须经过受保护环境审批。GitHub 是新的生产控制面，因此
 branch protection、最小写权限和审计记录属于系统架构，而不是可选流程。
@@ -221,6 +221,7 @@ VerifiedProfileBundle {
 ## 9. 缓存与状态
 
 - 3x-ui 订阅、CanonicalNode、最终配置和错误响应不缓存。
+- sing-box 客户端本地 `cache_file` 可保存服务 selector 选择与远程规则集；Worker 不读写该状态。
 - 首期不使用 Cache API、KV、R2、D1 或 Durable Objects。
 - bundle 的 URL 内容不可变，可由 GitHub CDN 缓存；manifest 是唯一可变指针。
 - GitHub 故障时首期失败关闭，不使用跨请求模块全局变量保存 last-known-good。

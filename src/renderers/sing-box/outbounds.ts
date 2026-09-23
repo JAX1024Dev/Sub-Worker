@@ -34,6 +34,12 @@ export interface OutboundRenderPolicy {
     region: 'uk';
     onMissing: 'block';
   }[];
+  serviceSelectors?: {
+    type: 'selector';
+    tag: string;
+    default: 'global' | 'direct' | 'block' | 'uk';
+    choices: ('global' | 'nodes' | 'direct' | 'block' | 'uk')[];
+  }[];
   reservedTags: readonly string[];
 }
 
@@ -65,6 +71,29 @@ function createNodeTags(nodes: CanonicalNode[], reservedTags: readonly string[])
     while (used.has(candidate)) {
       candidate = `${base} (${String(suffix)})`;
       suffix += 1;
+    }
+    used.add(candidate);
+    return candidate;
+  });
+}
+
+function stableNodeTag(node: CanonicalNode): string {
+  const identity = `${node.server}\0${String(node.serverPort)}\0${node.uuid}\0${node.reality.publicKey}`;
+  let hash = 2166136261;
+  for (const byte of new TextEncoder().encode(identity)) {
+    hash = Math.imul(hash ^ byte, 16777619) >>> 0;
+  }
+  return `${node.name || 'node'} [${hash.toString(16).padStart(8, '0')}]`;
+}
+
+function createStableNodeTags(nodes: CanonicalNode[], reservedTags: readonly string[]): string[] {
+  const used = new Set(reservedTags);
+  return nodes.map((node) => {
+    const base = stableNodeTag(node);
+    let candidate = base;
+    let suffix = 2;
+    while (used.has(candidate)) {
+      candidate = `${base} (${String(suffix++)})`;
     }
     used.add(candidate);
     return candidate;
@@ -117,7 +146,9 @@ export function generateOutboundsFromPolicy(
     throw new Error('Cannot generate outbounds without compatible nodes.');
   }
 
-  const nodeTags = createNodeTags(nodes, policy.reservedTags);
+  const nodeTags = policy.serviceSelectors
+    ? createStableNodeTags(nodes, policy.reservedTags)
+    : createNodeTags(nodes, policy.reservedTags);
   const nodeOutbounds = nodes.map((node, index) =>
     renderNode(node, nodeTags[index] ?? '', policy.nodeDefaults),
   );
@@ -150,6 +181,31 @@ export function generateOutboundsFromPolicy(
           tag: selector.tag,
           outbounds,
           default: outbounds[0] ?? policy.block.tag,
+        };
+      }),
+      ...(policy.serviceSelectors ?? []).map((selector): Outbound => {
+        const choiceTags = selector.choices.flatMap((choice) => {
+          if (choice === 'nodes') return nodeTags;
+          if (choice === 'global') return [policy.selector.tag];
+          if (choice === 'direct') return [policy.direct.tag];
+          if (choice === 'block') return [policy.block.tag];
+          return (policy.regionSelectors ?? []).map((region) => region.tag);
+        });
+        const defaultTag =
+          selector.default === 'global'
+            ? policy.selector.tag
+            : selector.default === 'uk'
+              ? policy.regionSelectors?.[0]?.tag
+              : selector.default === 'direct'
+                ? policy.direct.tag
+                : policy.block.tag;
+        if (defaultTag === undefined || !choiceTags.includes(defaultTag))
+          throw new Error('Service selector default is unavailable.');
+        return {
+          type: 'selector',
+          tag: selector.tag,
+          outbounds: [...new Set(choiceTags)],
+          default: defaultTag,
         };
       }),
       { ...policy.direct },

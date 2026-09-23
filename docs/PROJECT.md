@@ -1,7 +1,6 @@
 # 项目说明
 
-> 当前 production 使用 GitHub 发布的远程配置包。本次服务分类规则经维护者明确授权
-> 直接上线；英国出口的实际 IP 与应用连通性仍需发布后验证。
+> 当前 production 使用 GitHub 发布的远程配置包。本次新服务策略组经维护者明确授权直接发布 production；上线后仍须验证。
 
 ## 项目定位
 
@@ -75,8 +74,10 @@ MVP 只接受：
 - VLESS + REALITY 节点 outbounds。
 - VLESS TCP transport 节点同时承载 TCP 与 UDP，UDP 使用 XUDP 编码。
 - 由远程 outbound policy 实例化的 `selector`、`urltest`、direct 和 block。
-- 常用服务分类（Apple、Microsoft、Google、YouTube、OpenAI、Netflix、Telegram），
-  以及 Kraken/Krak 的英国节点组；无可识别英国节点时该组阻断而非回退普通代理。
+- 可在客户端独立切换的 AI、YouTube、流媒体、Google、Telegram、Apple、Microsoft、
+  广告拦截等服务策略组，以及 Netflix、Disney+、Spotify、TikTok、GitHub 和 Kraken/Krak。
+  Microsoft 默认直连、Apple 默认代理、广告默认拦截、Kraken/Krak 默认英国节点；
+  无英国节点时阻断。其他未匹配中国规则的流量默认代理。
 - 按平台选择的 TUN 和系统集成配置。
 - [DNS 生成规格](./DNS.md)。
 - [路由规则生成规格](./RULES.md)。
