@@ -42,7 +42,12 @@ for (const [clientType, bundle] of bundles) {
   ];
   const selectorTags = new Set(selectors.map((selector) => selector.tag));
   if (
-    !isDeepStrictEqual(current.inbounds, legacy.inbounds) ||
+    !isDeepStrictEqual(
+      current.inbounds,
+      clientType === 'ios'
+        ? legacy.inbounds.map((inbound) => ({ ...inbound, stack: 'gvisor' }))
+        : legacy.inbounds,
+    ) ||
     !isDeepStrictEqual(current.route.auto_detect_interface, legacy.route.auto_detect_interface) ||
     !isDeepStrictEqual(current.route.override_android_vpn, legacy.route.override_android_vpn) ||
     !required.every((tag) => selectorTags.has(tag)) ||
