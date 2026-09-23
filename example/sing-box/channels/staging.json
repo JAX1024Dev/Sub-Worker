@@ -3,24 +3,24 @@
   "channel": "staging",
   "profiles": {
     "ios": {
-      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/ios.bundle.json",
-      "sha256": "353193f75cd8d0c8b435c928d5e3f3d1edc72d110187a8f86e15681327071ee5"
+      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/4baf950621a1e89813cce579b037f664a92ef482/example/sing-box/published/ios.bundle.json",
+      "sha256": "fda57a67560939b50085b4e42044ce0da5d52fbb8a951099c65eede0b90b172c"
     },
     "macos": {
-      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/macos.bundle.json",
-      "sha256": "64753257fc7ae971057627827f20eb91698f7a4d94f9719d85f0a65939b84579"
+      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/4baf950621a1e89813cce579b037f664a92ef482/example/sing-box/published/macos.bundle.json",
+      "sha256": "bcbc0ff4fd698af687c307d7b6da8358c245950ffd5f1a8993785ef850e2082d"
     },
     "android": {
-      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/android.bundle.json",
-      "sha256": "055099c8150e796da489c626af1a48ac3e1cc2f245e738d04c7793ccc96f2371"
+      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/4baf950621a1e89813cce579b037f664a92ef482/example/sing-box/published/android.bundle.json",
+      "sha256": "196ca705f18bb74e14cde1e718c988dbf3b30598e7d8d2314d2a04c64f4430c2"
     },
     "windows": {
-      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/windows.bundle.json",
-      "sha256": "d7e9efccedbc10d53da9404cb59cd4797d08b6d96e8c5dac0e7406c55c26c573"
+      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/4baf950621a1e89813cce579b037f664a92ef482/example/sing-box/published/windows.bundle.json",
+      "sha256": "feac3d3a37aea5411eaeb317ff255eebc6be63274bc9ddf5bc2b58dd2af2f4f3"
     },
     "linux": {
-      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/linux.bundle.json",
-      "sha256": "a0e56eeefe10917993ae6b562b8aca9cf0e1217360e0790db56aa51759dfb0a6"
+      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/4baf950621a1e89813cce579b037f664a92ef482/example/sing-box/published/linux.bundle.json",
+      "sha256": "4677ca2d74d363ea104b9c389e85434a07be6309588aa7d2089b1ac9d7d255b5"
     }
   }
 }
