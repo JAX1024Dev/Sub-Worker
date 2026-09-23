@@ -58,6 +58,18 @@ pnpm deploy:production
 
 ## 最新发布记录
 
+- 日期：2026-09-23。
+- Bundle commit：`d1f33fcc7890c6dccc6707fac3b426aff01df1c8`。
+- Channel manifest commit：`32af370`；staging 与 production 均指向同一不可变 bundle。
+- Production Worker version：`7fb8071f-4a63-467e-bf97-aeec99200919`。
+- 维护者明确批准本次跳过 staging 实机阶段直接上线 production；`pnpm check` 全通过
+  （140 项测试、五平台 sing-box 1.14.0 配置检查和 Worker dry-run）。
+- production 五个平台订阅均返回 HTTP 200，包含服务分类、Kraken/Krak 英国路由与非空
+  英国节点组，响应保留 `private, no-store`。英国节点真实出口 IP 和应用级连通性尚待
+  客户端实测；节点标签不构成地理位置证明。
+
+### 上次发布（2026-09-15）
+
 - 日期：2026-09-15
 - Bundle commit：`f9449437faddb1bfd5efd6fbe731b6c8e0ec135b`
 - Staging Worker version：`5794567c-266a-4f25-8c62-c8c867828e2c`
