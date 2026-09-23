@@ -58,7 +58,7 @@ profile 必须成组选择 DNS、平台和路由片段。例如 macOS FakeIP 双
 
 用途：
 
-- 解析 `geosite-cn` 域名。
+- 解析 `geosite-cn`、`apple-cn`、`microsoft-cn` 域名。
 - 解析使用域名作为服务器地址的代理节点。
 
 使用 IP 连接并显式设置 TLS server name，避免解析 DoH 服务自身。sing-box 1.12+
@@ -127,13 +127,16 @@ server: dns-fakeip
 该规则不是代理出口规则。它保留域名到临时地址的映射，让 direct outbound 在物理 IPv6
 不可用时仍能用同一域名解析并尝试 IPv4，而不是被一个已确定的 IPv6 字面地址锁死。
 
-### D1：中国域名
+### D1：中国服务域名
 
 ```text
-match: rule_set = geosite-cn
+match: rule_set = apple-cn, then microsoft-cn, then geosite-cn
 action: route
 server: dns-cn
 ```
+
+普通 split-DoH profile 按上述顺序配置；FakeIP 双栈 profile 的 D0.5 已提前回答客户端
+A/AAAA 查询，内部真实解析由 direct 出站使用 `dns-cn`。
 
 ### D2：默认
 
@@ -188,7 +191,8 @@ dns.timeout = 5s
 
 ## 9. 规则集下载关系
 
-DNS 的 D1 依赖 `geosite-cn`。该规则集由路由模块声明，并通过 proxy HTTP client 下载。
+DNS 的 D1 依赖 `geosite-cn`、`apple-cn` 和 `microsoft-cn`。这些规则集由路由模块声明，
+并通过 proxy HTTP client 下载。
 
 启动依赖顺序为：
 

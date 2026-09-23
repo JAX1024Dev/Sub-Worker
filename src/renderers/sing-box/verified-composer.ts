@@ -14,6 +14,7 @@ function collectReservedTags(bundle: RemoteConfigBundle): string[] {
     bundle.fragments.outbound_policy.selector.tag,
     bundle.fragments.outbound_policy.direct.tag,
     bundle.fragments.outbound_policy.block.tag,
+    ...(bundle.fragments.outbound_policy.region_selectors ?? []).map((selector) => selector.tag),
   ];
 }
 
@@ -52,6 +53,16 @@ export function composeVerifiedSingBoxConfig(
       direct: policy.direct,
       block: policy.block,
       reservedTags: collectReservedTags(bundle),
+      ...(policy.region_selectors === undefined
+        ? {}
+        : {
+            regionSelectors: policy.region_selectors.map((selector) => ({
+              type: selector.type,
+              tag: selector.tag,
+              region: selector.region,
+              onMissing: selector.on_missing,
+            })),
+          }),
     });
     const outboundTags = generated.outbounds.map((outbound) => outbound.tag);
     if (new Set(outboundTags).size !== outboundTags.length) {

@@ -28,7 +28,17 @@ export interface OutboundRenderPolicy {
     type: 'block';
     tag: string;
   };
+  regionSelectors?: {
+    type: 'selector';
+    tag: string;
+    region: 'uk';
+    onMissing: 'block';
+  }[];
   reservedTags: readonly string[];
+}
+
+function isUkNodeName(name: string): boolean {
+  return /🇬🇧|英国|英國|(?:^|[^a-z])(?:uk|gb|united kingdom|london)(?=$|[^a-z])/iu.test(name);
 }
 
 function isIpAddress(value: string): boolean {
@@ -130,6 +140,18 @@ export function generateOutboundsFromPolicy(
         outbounds: [policy.urltest.tag, ...nodeTags],
         default: policy.selector.default,
       },
+      ...(policy.regionSelectors ?? []).map((selector): Outbound => {
+        const matched = nodes.flatMap((node, index) =>
+          isUkNodeName(node.name) ? [nodeTags[index] ?? ''] : [],
+        );
+        const outbounds = matched.length > 0 ? matched : [policy.block.tag];
+        return {
+          type: 'selector',
+          tag: selector.tag,
+          outbounds,
+          default: outbounds[0] ?? policy.block.tag,
+        };
+      }),
       { ...policy.direct },
       { ...policy.block },
     ],

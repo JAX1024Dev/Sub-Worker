@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Added pinned service rule sets for Apple, Microsoft, Google, YouTube, OpenAI, Netflix, and
+  Telegram, plus a UK-only Kraken/Krak selector that blocks if no UK-labelled node is available.
+- Added sing-box 1.14.0 validation for all five assembled remote-bundle profiles.
 - Added reviewed sing-box source fragments, deterministic per-platform bundles, strict schemas,
   channel manifests, and GitHub Actions promotion workflows.
 - Added bounded GitHub configuration loading with immutable commit URLs, SHA-256 verification,

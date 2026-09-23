@@ -15,6 +15,14 @@
     "tag": "proxy",
     "default": "auto"
   },
+  "region_selectors": [
+    {
+      "type": "selector",
+      "tag": "uk",
+      "region": "uk",
+      "on_missing": "block"
+    }
+  ],
   "direct": {
     "type": "direct",
     "tag": "direct"

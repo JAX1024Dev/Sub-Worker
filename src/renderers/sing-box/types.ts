@@ -111,6 +111,7 @@ export type RouteRule =
   | { ip_is_private: true; action: 'route'; outbound: string }
   | { ip_version: 4 | 6; action: 'route'; outbound: string }
   | { rule_set: string; action: 'route'; outbound: string }
+  | { domain_suffix: string[]; action: 'route'; outbound: string }
   | { action: 'resolve'; strategy?: 'ipv4_only' };
 
 export interface RemoteRuleSet {

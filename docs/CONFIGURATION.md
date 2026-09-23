@@ -132,12 +132,17 @@ Bundle 是项目自有 schema，不是假装可以独立运行的 sing-box 配�
 | `dns`             | 完整 `dns` 对象                                            |
 | `platform`        | `inbounds` 与 allowlist 中的 route 平台选项                |
 | `route`           | `http_clients`、`route.rules`、rule-set、final 和 resolver |
-| `outbound_policy` | selector/urltest 参数、固定 tag、节点默认值                |
+| `outbound_policy` | selector/urltest 参数、地区节点组、固定 tag、节点默认值    |
 | Worker            | 由 `CanonicalNode[]` 生成的节点及动态 outbound tag 数组    |
 
 禁止通用 deep merge。每个顶层字段只有一个 owner；平台 route 选项只允许通过显式
 allowlist 合入。数组只能由对应 owner 完整提供，或由 Composer 在已定义的插槽生成。
 未知字段、重复 tag、保留 tag 被节点占用、版本不匹配或引用缺失都必须失败关闭。
+
+`region_selectors` 由 bundle 声明，当前仅支持 `uk`。Worker 依据 3x-ui 节点标签中的
+`🇬🇧`、`英国`、`英國`、独立的 `UK`/`GB`、`United Kingdom` 或 `London` 组成 `uk`
+selector；没有匹配节点时 selector 只包含 `block`。标签是管理员声明，不是出口 IP 的
+地理位置证明；上线前须在实机检查英国出口 IP。
 
 ## 6. 请求数据流
 

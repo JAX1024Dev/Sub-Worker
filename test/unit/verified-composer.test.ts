@@ -28,12 +28,61 @@ function legacyProductionConfig(clientType: ClientType) {
 }
 
 describe('verified sing-box composer', () => {
-  it.each(bundleSources)('matches current production behavior for %s', (clientType, source) => {
-    const bundle = parseRemoteConfigBundle(source, clientType);
+  it.each(bundleSources)(
+    'preserves baseline behavior outside service routing for %s',
+    (clientType, source) => {
+      const bundle = parseRemoteConfigBundle(source, clientType);
+      const config = composeVerifiedSingBoxConfig([fakeCanonicalNode], bundle);
+      const legacy = legacyProductionConfig(clientType);
+      expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
+        type: 'selector',
+        outbounds: ['block'],
+        default: 'block',
+      });
+      expect(config.route.rules).toContainEqual({
+        domain_suffix: ['kraken.com', 'krak.app'],
+        action: 'route',
+        outbound: 'uk',
+      });
+      expect(config.dns.rules).toContainEqual({
+        rule_set: 'apple-cn',
+        action: 'route',
+        server: 'dns-cn',
+      });
+      expect(config.dns.rules).toContainEqual({
+        rule_set: 'microsoft-cn',
+        action: 'route',
+        server: 'dns-cn',
+      });
+      const routeTags = config.route.rules.map((rule) =>
+        'domain_suffix' in rule ? 'kraken' : 'rule_set' in rule ? rule.rule_set : '',
+      );
+      expect(routeTags.indexOf('kraken')).toBeLessThan(routeTags.indexOf('geosite-cn'));
+      expect(routeTags.indexOf('apple-cn')).toBeLessThan(routeTags.indexOf('apple'));
+      expect(routeTags.indexOf('microsoft-cn')).toBeLessThan(routeTags.indexOf('microsoft'));
+      config.outbounds = config.outbounds.filter((outbound) => outbound.tag !== 'uk');
+      config.route.rules = legacy.route.rules;
+      config.route.rule_set = legacy.route.rule_set;
+      config.dns.rules = legacy.dns.rules;
+      expect(config).toEqual(legacy);
+    },
+  );
 
-    expect(composeVerifiedSingBoxConfig([fakeCanonicalNode], bundle)).toEqual(
-      legacyProductionConfig(clientType),
+  it('restricts the UK selector to matching node labels and never falls back to generic proxy', () => {
+    const bundle = parseRemoteConfigBundle(iosBundleSource, 'ios');
+    const config = composeVerifiedSingBoxConfig(
+      [
+        { ...fakeCanonicalNode, name: 'USA' },
+        { ...fakeCanonicalNode, sourceIndex: 1, name: 'UK London' },
+        { ...fakeCanonicalNode, sourceIndex: 2, name: '🇬🇧 英国' },
+      ],
+      bundle,
     );
+    expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
+      type: 'selector',
+      outbounds: ['UK London', '🇬🇧 英国'],
+      default: 'UK London',
+    });
   });
 
   it('uses bundle-owned logging, urltest, and outbound policy values', () => {

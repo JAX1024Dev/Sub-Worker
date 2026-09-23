@@ -1,7 +1,7 @@
 # 项目说明
 
-> 重构状态：本文描述目标形态。当前 production 仍使用 Worker 内置 Generator；远程配置
-> 链路必须按 [DEVELOPMENT.md](./DEVELOPMENT.md) 分阶段完成并通过 staging 后才能切换。
+> 当前 production 使用 GitHub 发布的远程配置包。本次服务分类规则经维护者明确授权
+> 直接上线；英国出口的实际 IP 与应用连通性仍需发布后验证。
 
 ## 项目定位
 
@@ -75,6 +75,8 @@ MVP 只接受：
 - VLESS + REALITY 节点 outbounds。
 - VLESS TCP transport 节点同时承载 TCP 与 UDP，UDP 使用 XUDP 编码。
 - 由远程 outbound policy 实例化的 `selector`、`urltest`、direct 和 block。
+- 常用服务分类（Apple、Microsoft、Google、YouTube、OpenAI、Netflix、Telegram），
+  以及 Kraken/Krak 的英国节点组；无可识别英国节点时该组阻断而非回退普通代理。
 - 按平台选择的 TUN 和系统集成配置。
 - [DNS 生成规格](./DNS.md)。
 - [路由规则生成规格](./RULES.md)。

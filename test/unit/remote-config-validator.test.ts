@@ -35,4 +35,22 @@ describe('remote configuration runtime validator', () => {
       expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
     );
   });
+
+  it('rejects duplicate regional selector tags and unsafe domain-suffix rules', () => {
+    const duplicate = structuredClone(iosBundle);
+    const selector = duplicate.fragments.outbound_policy.region_selectors[0];
+    if (selector === undefined) throw new Error('Missing UK selector');
+    selector.tag = 'proxy';
+    expect(() => parseRemoteConfigBundle(duplicate, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+
+    const unsafe = structuredClone(iosBundle);
+    const kraken = unsafe.fragments.route.route.rules.find((rule) => 'domain_suffix' in rule);
+    if (kraken === undefined || !('domain_suffix' in kraken)) throw new Error('Missing rule');
+    kraken.domain_suffix = ['evil.com/redirect'];
+    expect(() => parseRemoteConfigBundle(unsafe, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+  });
 });

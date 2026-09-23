@@ -31,6 +31,8 @@
         }
       ],
       "rules": [
+        { "rule_set": "apple-cn", "action": "route", "server": "dns-cn" },
+        { "rule_set": "microsoft-cn", "action": "route", "server": "dns-cn" },
         { "rule_set": "geosite-cn", "action": "route", "server": "dns-cn" },
         { "action": "route", "server": "dns-global" }
       ],
@@ -63,6 +65,24 @@
           { "action": "sniff" },
           { "protocol": "dns", "action": "hijack-dns" },
           { "ip_is_private": true, "action": "route", "outbound": "direct" },
+          {
+            "domain_suffix": ["kraken.com", "krak.app"],
+            "action": "route",
+            "outbound": "uk"
+          },
+          { "rule_set": "apple-cn", "action": "route", "outbound": "direct" },
+          {
+            "rule_set": "microsoft-cn",
+            "action": "route",
+            "outbound": "direct"
+          },
+          { "rule_set": "apple", "action": "route", "outbound": "proxy" },
+          { "rule_set": "microsoft", "action": "route", "outbound": "proxy" },
+          { "rule_set": "google", "action": "route", "outbound": "proxy" },
+          { "rule_set": "youtube", "action": "route", "outbound": "proxy" },
+          { "rule_set": "openai", "action": "route", "outbound": "proxy" },
+          { "rule_set": "netflix", "action": "route", "outbound": "proxy" },
+          { "rule_set": "telegram", "action": "route", "outbound": "proxy" },
           { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
           {
             "rule_set": "geosite-non-cn",
@@ -94,6 +114,69 @@
             "format": "binary",
             "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/b9c5e675b4d5359d4b47f4434fa7ae77e9991306/geoip-cn.srs",
             "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "apple-cn",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/apple@cn.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "microsoft-cn",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/microsoft@cn.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "apple",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/apple.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "microsoft",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/microsoft.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "google",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/google.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "youtube",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/youtube.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "openai",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/openai.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "netflix",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/netflix.srs",
+            "http_client": "rules-via-proxy"
+          },
+          {
+            "type": "remote",
+            "tag": "telegram",
+            "format": "binary",
+            "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/d1363ad015e8bb0fdcb0eb08be518e161354c695/geo/geosite/telegram.srs",
+            "http_client": "rules-via-proxy"
           }
         ],
         "final": "proxy",
@@ -114,6 +197,14 @@
         "tolerance": 50
       },
       "selector": { "type": "selector", "tag": "proxy", "default": "auto" },
+      "region_selectors": [
+        {
+          "type": "selector",
+          "tag": "uk",
+          "region": "uk",
+          "on_missing": "block"
+        }
+      ],
       "direct": { "type": "direct", "tag": "direct" },
       "block": { "type": "block", "tag": "block" }
     }

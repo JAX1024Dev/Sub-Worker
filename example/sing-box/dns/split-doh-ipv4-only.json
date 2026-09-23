@@ -30,6 +30,8 @@
       "action": "reject",
       "no_drop": true
     },
+    { "rule_set": "apple-cn", "action": "route", "server": "dns-cn" },
+    { "rule_set": "microsoft-cn", "action": "route", "server": "dns-cn" },
     {
       "rule_set": "geosite-cn",
       "action": "route",

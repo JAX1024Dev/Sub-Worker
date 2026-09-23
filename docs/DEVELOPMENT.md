@@ -106,7 +106,7 @@ curl --fail-with-body \
 | ---------------------------------- | ----------------------------------------- |
 | 校验全部源片段、profile 和引用     | `pnpm config:validate`                    |
 | 确定性生成五个平台 bundle          | `pnpm config:build`                       |
-| 检查 bundle 最新并对比旧 Generator | `pnpm config:diff`                        |
+| 检查 bundle 最新及未变更的基线行为 | `pnpm config:diff`                        |
 | 校验已发布 channel 与 Git 对象     | `pnpm config:channels:check`              |
 | 发布 staging manifest              | `pnpm config:publish:staging -- <commit>` |
 | 提升 staging 到 production         | `pnpm config:promote:production`          |
@@ -189,7 +189,9 @@ macOS 校验 Linux fixture 时，脚本仅在临时副本中移除 Linux 专属�
 
 ## 8. Build 与 CI
 
-`pnpm build` 必须完成类型检查和 Worker dry-run bundle，不嵌入本地 secret。生成配置的语义校验由 `pnpm test:config` 独立执行。
+`pnpm build` 必须完成类型检查和 Worker dry-run bundle，不嵌入本地 secret。`pnpm test:config`
+同时检查旧 fixture 与五个平台远程 bundle 的真实组装结果，使用 sing-box 1.14.0 执行
+`check`。
 
 合并门禁：
 

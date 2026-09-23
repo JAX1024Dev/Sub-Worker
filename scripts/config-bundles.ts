@@ -76,6 +76,7 @@ interface OutboundPolicyFragment {
   selector: TaggedValue & Record<string, unknown>;
   direct: TaggedValue & Record<string, unknown>;
   block: TaggedValue & Record<string, unknown>;
+  region_selectors?: Array<TaggedValue & Record<string, unknown>>;
 }
 
 interface CommonFragment {
@@ -234,7 +235,13 @@ function validateSemantics(bundle: ConfigBundle): void {
   const httpClientTags = assertUniqueTags(route.http_clients, 'HTTP clients');
   const ruleSetTags = assertUniqueTags(route.route.rule_set, 'Route rule sets');
   const outboundTags = assertUniqueTags(
-    [outboundPolicy.urltest, outboundPolicy.selector, outboundPolicy.direct, outboundPolicy.block],
+    [
+      outboundPolicy.urltest,
+      outboundPolicy.selector,
+      outboundPolicy.direct,
+      outboundPolicy.block,
+      ...(outboundPolicy.region_selectors ?? []),
+    ],
     'Fixed outbounds',
   );
 

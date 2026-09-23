@@ -69,6 +69,12 @@ export interface OutboundPolicyFragment {
     type: 'block';
     tag: 'block';
   };
+  region_selectors?: {
+    type: 'selector';
+    tag: string;
+    region: 'uk';
+    on_missing: 'block';
+  }[];
 }
 
 export interface RemoteConfigBundle {

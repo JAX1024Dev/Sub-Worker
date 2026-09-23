@@ -292,6 +292,18 @@ function isRouteRule(value: unknown): value is RouteRule {
   ) {
     return true;
   }
+  if (
+    hasKeys(value, ['domain_suffix', 'action', 'outbound']) &&
+    Array.isArray(value.domain_suffix) &&
+    value.domain_suffix.length > 0 &&
+    value.domain_suffix.every(
+      (domain) => typeof domain === 'string' && /^[a-z0-9.-]+$/u.test(domain),
+    ) &&
+    value.action === 'route' &&
+    isNonEmptyString(value.outbound)
+  ) {
+    return true;
+  }
   return (
     hasKeys(value, ['action'], ['strategy']) &&
     value.action === 'resolve' &&
@@ -351,7 +363,11 @@ function isRoutingFragment(value: unknown): value is RoutingConfigFragment {
 function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
   if (
     !isRecord(value) ||
-    !hasKeys(value, ['node_defaults', 'urltest', 'selector', 'direct', 'block']) ||
+    !hasKeys(
+      value,
+      ['node_defaults', 'urltest', 'selector', 'direct', 'block'],
+      ['region_selectors'],
+    ) ||
     !isRecord(value.node_defaults) ||
     !hasKeys(value.node_defaults, ['packet_encoding', 'domain_resolver']) ||
     value.node_defaults.packet_encoding !== 'xudp' ||
@@ -380,7 +396,19 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
     !isRecord(value.block) ||
     !hasKeys(value.block, ['type', 'tag']) ||
     value.block.type !== 'block' ||
-    value.block.tag !== 'block'
+    value.block.tag !== 'block' ||
+    (value.region_selectors !== undefined &&
+      (!Array.isArray(value.region_selectors) ||
+        value.region_selectors.length === 0 ||
+        !value.region_selectors.every(
+          (selector) =>
+            isRecord(selector) &&
+            hasKeys(selector, ['type', 'tag', 'region', 'on_missing']) &&
+            selector.type === 'selector' &&
+            isNonEmptyString(selector.tag) &&
+            selector.region === 'uk' &&
+            selector.on_missing === 'block',
+        )))
   ) {
     return false;
   }
@@ -397,6 +425,7 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
     bundle.fragments.outbound_policy.selector.tag,
     bundle.fragments.outbound_policy.direct.tag,
     bundle.fragments.outbound_policy.block.tag,
+    ...(bundle.fragments.outbound_policy.region_selectors ?? []).map((selector) => selector.tag),
   ];
   const outboundTags: Set<string> = new Set(tags);
 

@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:unit": "vitest run test/unit",
     "test:integration": "vitest run test/integration --passWithNoTests",
-    "test:config": "pnpm fixtures:check && node scripts/validate-generated-configs.mjs",
+    "test:config": "pnpm fixtures:check && node scripts/validate-generated-configs.mjs && node --import tsx scripts/validate-published-configs.ts",
     "test:rulesets": "tsx scripts/verify-rule-sets.ts && pnpm rules:check:ios-routes",
     "rules:generate:ios-routes": "tsx scripts/generate-ios-route-excludes.ts",
     "rules:check:ios-routes": "tsx scripts/generate-ios-route-excludes.ts --check",

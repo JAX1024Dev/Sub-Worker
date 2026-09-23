@@ -47,11 +47,14 @@ ruleSetHttpClientTag = "rules-via-proxy"
 
 ## 4. 规则集
 
-| tag              | 内容                 | 预期来源                               |
-| ---------------- | -------------------- | -------------------------------------- |
-| `geosite-cn`     | 中国大陆域名         | SagerNet `geosite-geolocation-cn.srs`  |
-| `geosite-non-cn` | 明确的非中国大陆域名 | SagerNet `geosite-geolocation-!cn.srs` |
-| `geoip-cn`       | 中国大陆 IP 网段     | SagerNet `geoip-cn.srs`                |
+| tag                                                  | 内容                     | 预期来源                                     |
+| ---------------------------------------------------- | ------------------------ | -------------------------------------------- |
+| `geosite-cn`                                         | 中国大陆域名             | SagerNet `geosite-geolocation-cn.srs`        |
+| `geosite-non-cn`                                     | 明确的非中国大陆域名     | SagerNet `geosite-geolocation-!cn.srs`       |
+| `geoip-cn`                                           | 中国大陆 IP 网段         | SagerNet `geoip-cn.srs`                      |
+| `apple-cn`、`microsoft-cn`                           | Apple/Microsoft 中国服务 | MetaCubeX `apple@cn.srs`、`microsoft@cn.srs` |
+| `apple`、`microsoft`                                 | Apple/Microsoft 其他服务 | MetaCubeX 对应 `.srs`                        |
+| `google`、`youtube`、`openai`、`netflix`、`telegram` | 常用境外服务             | MetaCubeX 对应 `.srs`                        |
 
 生成要求：
 
@@ -61,6 +64,9 @@ ruleSetHttpClientTag = "rules-via-proxy"
 - 不使用 1.14.0 已废弃的 `download_detour`。
 - MVP 不显式启用 `experimental.cache_file`；客户端启动时需要获取规则集。
 - URL、固定版本和校验信息作为集中常量维护。
+- 新服务集固定到 MetaCubeX `sing` 分支已验证提交
+  `d1363ad015e8bb0fdcb0eb08be518e161354c695`；每次升级需检查文件存在、规则变化、
+  客户端启动时间及内存。不要整体导入规则仓库。
 
 ## 5. 规则顺序
 
@@ -106,6 +112,19 @@ iOS TUN 在接管流量前已通过显式 `route_exclude_address` 将中国 IPv6
 网络，因此进入本规则的公网 IPv6 属于未被中国 IPv6 CIDR 覆盖的流量，必须经 proxy，
 避免 Packet Tunnel direct 出站返回 `no route to host`。该规则也保护应用预解析、缓存
 或直接使用的 IPv6 字面量。
+
+### S1：Kraken/Krak 英国出口
+
+`kraken.com` 与 `krak.app` 的域名后缀在中国/非中国通用规则前路由到 `uk` selector。
+`krak.com` 未被确认为官方域名，不匹配；不使用 `krak` 关键词规则。`uk` 组只包含标签
+明确标记为英国的订阅节点；缺少时阻断。节点标签不能证明出口地理位置，也不能涵盖应用
+可能使用的第三方登录、支付或 CDN 域名，需用实际流量日志核对。
+
+### S2：服务分类
+
+先将 Apple/Microsoft 的中国服务直连，再将其全球规则以及 Google、YouTube、OpenAI、
+Netflix、Telegram 走 `proxy`。上述服务规则位于通用 `geosite-cn`/`geosite-non-cn` 之前，
+以保证分类优先级。规则集由各平台共享的路由 JSON 管理，变更只需重新发布配置包。
 
 ### R4：中国域名直连
 

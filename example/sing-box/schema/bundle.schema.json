@@ -251,6 +251,21 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "required": ["domain_suffix", "action", "outbound"],
+          "properties": {
+            "domain_suffix": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[a-z0-9.-]+$" }
+            },
+            "action": { "const": "route" },
+            "outbound": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "required": ["action"],
           "properties": {
             "action": { "const": "resolve" },
@@ -373,6 +388,21 @@
           "properties": {
             "type": { "const": "block" },
             "tag": { "const": "block" }
+          }
+        },
+        "region_selectors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "tag", "region", "on_missing"],
+            "properties": {
+              "type": { "const": "selector" },
+              "tag": { "type": "string", "minLength": 1 },
+              "region": { "const": "uk" },
+              "on_missing": { "const": "block" }
+            }
           }
         }
       }
