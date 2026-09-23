@@ -3,8 +3,8 @@
   "channel": "staging",
   "profiles": {
     "ios": {
-      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/ios.bundle.json",
-      "sha256": "353193f75cd8d0c8b435c928d5e3f3d1edc72d110187a8f86e15681327071ee5"
+      "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/38f6c6536a44becf9e631f980b446f2eb4590731/example/sing-box/published/ios.bundle.json",
+      "sha256": "befb84dc7a8777ac86f0b427a0c6089d907d5d4434944afaca8b2573977d979b"
     },
     "macos": {
       "bundle_url": "https://raw.githubusercontent.com/JAX1024Dev/Sub-Worker/d1f33fcc7890c6dccc6707fac3b426aff01df1c8/example/sing-box/published/macos.bundle.json",
