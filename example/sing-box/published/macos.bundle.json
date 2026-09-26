@@ -127,56 +127,56 @@
             "type": "remote",
             "tag": "ads",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/ads.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/ads.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "ai",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/ai.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/ai.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "youtube",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/youtube.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/youtube.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "media",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/media.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/media.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "netflix",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/netflix.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/netflix.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "disney",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/disney.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/disney.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "spotify",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/spotify.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/spotify.srs",
             "http_client": "rules-via-proxy"
           },
           {
             "type": "remote",
             "tag": "tiktok",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/tiktok.srs",
+            "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/tiktok.srs",
             "http_client": "rules-via-proxy"
           },
           {
