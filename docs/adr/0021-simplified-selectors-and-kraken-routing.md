@@ -1,6 +1,7 @@
 # ADR 0021：简化节点选择与 Kraken 路由
 
-状态：基础方案已发布 staging 与 production（2026-09-26）；Kraken 可选项收紧待发布。
+状态：已发布 staging 与 production（2026-09-26）；Kraken 可选项收紧 bundle 为
+`852233cac5d9781781b7194f53dd7e0fb9692442`。
 
 ## 决策
 
@@ -21,3 +22,5 @@ Bundle 提交为 `34ceb50a5483d8bee7681eea73aeaa5c247cdef9`。staging Worker 版
 `5145dc93-28ad-4f8a-a74b-301677ff0866`，production Worker 版本为
 `e5426657-bc1a-40ed-9630-7460732f536b`。`pnpm check`、远程规则集校验和五平台
 staging HTTP 结构检查均通过；后者不替代 iOS/macOS 实机连通性测试。
+Kraken 选项收紧后，五平台 staging HTTP 响应均验证仅包含两个英国节点、全局节点选择
+和 block；production 使用同一 bundle，仍须实机核验英国出口 IP。
