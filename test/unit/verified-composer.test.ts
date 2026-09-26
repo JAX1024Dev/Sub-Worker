@@ -44,6 +44,7 @@ describe('verified sing-box composer', () => {
       });
       expect(config.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak')).toMatchObject({
         default: 'block',
+        outbounds: ['block', '🚀 节点选择'],
       });
       for (const tag of [
         '🤖 AI',
@@ -83,9 +84,9 @@ describe('verified sing-box composer', () => {
     const kraken = config.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
     if (kraken?.type !== 'selector') throw new Error('Kraken selector missing');
     expect(kraken.default).toBe('UK London');
-    expect(kraken.outbounds).toContain('🇬🇧 英国');
-    expect(kraken.outbounds).toContain('block');
-    expect(kraken.outbounds).toContain('🚀 节点选择');
+    expect(kraken.outbounds).toEqual(['UK London', '🇬🇧 英国', '🚀 节点选择', 'block']);
+    expect(kraken.outbounds).not.toContain('USA');
+    expect(kraken.outbounds).not.toContain('direct');
   });
 
   it('keeps old auto and UK bundles readable during a staged release', () => {

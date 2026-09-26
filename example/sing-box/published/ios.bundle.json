@@ -315,7 +315,7 @@
           "type": "selector",
           "tag": "💷 Kraken/Krak",
           "default": "uk_node",
-          "choices": ["uk_node", "global", "nodes", "direct", "block"]
+          "choices": ["uk_node", "global", "block"]
         }
       ],
       "direct": {

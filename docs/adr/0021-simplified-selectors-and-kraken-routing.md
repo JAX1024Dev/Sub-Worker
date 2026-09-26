@@ -1,11 +1,11 @@
 # ADR 0021：简化节点选择与 Kraken 路由
 
-状态：已发布 staging 与 production（2026-09-26）。
+状态：基础方案已发布 staging 与 production（2026-09-26）；Kraken 可选项收紧待发布。
 
 ## 决策
 
 - 新 bundle 不生成 `auto` 测速组或独立 `uk` 地区组。全局 selector 默认第一个订阅节点。
-- Kraken/Krak selector 直接列出英国标签节点，默认第一个；没有英国节点时默认 `block`，不回退其他地区。用户仍能手动选择其他节点、全局组、直连或 block。
+- Kraken/Krak selector 直接列出英国标签节点，默认第一个；没有英国节点时默认 `block`，不回退其他地区。可选项仅为英国节点、全局 `🚀 节点选择` 和 `block`，不单独列出非英国节点或 `direct`。
 - Kraken 路由只匹配 `kraken.com`、`krak.app`、`kraken.zendesk.com` 及其子域名。不用包含 `krak` 的任意域名关键词规则，避免误伤。
 - GitHub 规则排在 Microsoft 前，处理上游规则集的域名重叠。
 - 唯一节点名不再带摘要后缀；重名或保留 tag 冲突时才追加稳定摘要。
