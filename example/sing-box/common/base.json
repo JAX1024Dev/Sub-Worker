@@ -1,7 +1,7 @@
 {
   "$schema": "https://sing-box.sagernet.org/schema.json",
   "log": {
-    "level": "info",
+    "level": "error",
     "timestamp": true
   },
   "experimental": { "cache_file": { "enabled": true } }

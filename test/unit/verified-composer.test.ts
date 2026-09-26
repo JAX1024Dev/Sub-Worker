@@ -129,6 +129,10 @@ describe('verified sing-box composer', () => {
 
   it('uses bundle-owned logging and outbound policy values', () => {
     const source = structuredClone(iosBundleSource);
+    expect(
+      composeVerifiedSingBoxConfig([fakeCanonicalNode], parseRemoteConfigBundle(source, 'ios')).log
+        .level,
+    ).toBe('error');
     source.fragments.common.log.level = 'debug';
     const bundle = parseRemoteConfigBundle(source, 'ios');
 

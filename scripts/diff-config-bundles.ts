@@ -50,6 +50,7 @@ for (const [clientType, bundle] of bundles) {
     ) ||
     !isDeepStrictEqual(current.route.auto_detect_interface, legacy.route.auto_detect_interface) ||
     !isDeepStrictEqual(current.route.override_android_vpn, legacy.route.override_android_vpn) ||
+    current.log.level !== 'error' ||
     !required.every((tag) => selectorTags.has(tag)) ||
     current.route.final !== '🚀 节点选择' ||
     current.experimental?.cache_file.cache_id !== 'test-cache'

@@ -35,7 +35,7 @@ export function composeSingBoxConfig(
 
   return {
     $schema: 'https://sing-box.sagernet.org/schema.json',
-    log: { level: 'info', timestamp: true },
+    log: { level: 'error', timestamp: true },
     dns: dns.dns,
     http_clients: routing.httpClients,
     inbounds: platform.inbounds,

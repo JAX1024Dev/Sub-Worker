@@ -4,7 +4,7 @@
   "fragments": {
     "common": {
       "$schema": "https://sing-box.sagernet.org/schema.json",
-      "log": { "level": "info", "timestamp": true },
+      "log": { "level": "error", "timestamp": true },
       "experimental": { "cache_file": { "enabled": true } }
     },
     "dns": {

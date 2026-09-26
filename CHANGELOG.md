@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Improved
 
+- Set generated sing-box configurations to log only `error` and above by default; clients can
+  change the level locally when troubleshooting.
 - Cancel rejected 3x-ui response streams, including oversized declared bodies, without replacing
   the original upstream error if cancellation fails.
 - Extend bundle regression checks to cover the global selector, Kraken UK-only choices and fallback,

@@ -67,6 +67,8 @@ example/
 `published/` 只由 `pnpm config:build` 生成，不得直接编辑。`profiles/*.json` 只声明每个
 平台选择哪些源片段。源文件经过 schema、引用和语义检查，确定性构建后与平台字段及
 服务组不变量对照。staging/production manifest 均已发布，引用真实不可变 bundle。
+`common/base.json` 中的 sing-box 日志等级默认为 `error`；用户可在客户端自行调整，
+Worker 不根据请求参数覆盖该值。
 
 Remote Config Source 验证 manifest 与 bundle URL，按流读取并
 限长，拒绝重定向、BOM、重复 JSON 键和未知字段，校验 SHA-256、目标平台、sing-box 版本
