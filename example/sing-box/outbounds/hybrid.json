@@ -3,26 +3,11 @@
     "packet_encoding": "xudp",
     "domain_resolver": "dns-cn"
   },
-  "urltest": {
-    "type": "urltest",
-    "tag": "auto",
-    "url": "https://www.gstatic.com/generate_204",
-    "interval": "3m",
-    "tolerance": 50
-  },
   "selector": {
     "type": "selector",
     "tag": "🚀 节点选择",
-    "default": "auto"
+    "default": "first_node"
   },
-  "region_selectors": [
-    {
-      "type": "selector",
-      "tag": "uk",
-      "region": "uk",
-      "on_missing": "block"
-    }
-  ],
   "service_selectors": [
     {
       "type": "selector",
@@ -105,8 +90,8 @@
     {
       "type": "selector",
       "tag": "💷 Kraken/Krak",
-      "default": "uk",
-      "choices": ["uk", "global", "nodes", "direct"]
+      "default": "uk_node",
+      "choices": ["uk_node", "global", "nodes", "direct", "block"]
     }
   ],
   "direct": {

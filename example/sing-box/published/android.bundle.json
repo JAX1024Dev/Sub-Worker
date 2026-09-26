@@ -65,7 +65,7 @@
           { "protocol": "dns", "action": "hijack-dns" },
           { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },
           {
-            "domain_suffix": ["kraken.com", "krak.app"],
+            "domain_suffix": ["kraken.com", "krak.app", "kraken.zendesk.com"],
             "action": "route",
             "outbound": "💷 Kraken/Krak"
           },
@@ -94,13 +94,13 @@
             "outbound": "✈️ Telegram"
           },
           { "rule_set": "apple", "action": "route", "outbound": "🍎 苹果" },
+          { "rule_set": "github", "action": "route", "outbound": "💻 GitHub" },
           {
             "rule_set": "microsoft-cn",
             "action": "route",
             "outbound": "Ⓜ️ 微软"
           },
           { "rule_set": "microsoft", "action": "route", "outbound": "Ⓜ️ 微软" },
-          { "rule_set": "github", "action": "route", "outbound": "💻 GitHub" },
           { "rule_set": "google", "action": "route", "outbound": "🔍 谷歌" },
           { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
           { "action": "resolve" },
@@ -231,26 +231,11 @@
         "packet_encoding": "xudp",
         "domain_resolver": "dns-cn"
       },
-      "urltest": {
-        "type": "urltest",
-        "tag": "auto",
-        "url": "https://www.gstatic.com/generate_204",
-        "interval": "3m",
-        "tolerance": 50
-      },
       "selector": {
         "type": "selector",
         "tag": "🚀 节点选择",
-        "default": "auto"
+        "default": "first_node"
       },
-      "region_selectors": [
-        {
-          "type": "selector",
-          "tag": "uk",
-          "region": "uk",
-          "on_missing": "block"
-        }
-      ],
       "service_selectors": [
         {
           "type": "selector",
@@ -333,8 +318,8 @@
         {
           "type": "selector",
           "tag": "💷 Kraken/Krak",
-          "default": "uk",
-          "choices": ["uk", "global", "nodes", "direct"]
+          "default": "uk_node",
+          "choices": ["uk_node", "global", "nodes", "direct", "block"]
         }
       ],
       "direct": { "type": "direct", "tag": "direct" },

@@ -10,7 +10,9 @@ function collectReservedTags(bundle: RemoteConfigBundle): string[] {
     ...bundle.fragments.platform.inbounds.map((inbound) => inbound.tag),
     ...bundle.fragments.route.http_clients.map((client) => client.tag),
     ...bundle.fragments.route.route.rule_set.map((ruleSet) => ruleSet.tag),
-    bundle.fragments.outbound_policy.urltest.tag,
+    ...(bundle.fragments.outbound_policy.urltest === undefined
+      ? []
+      : [bundle.fragments.outbound_policy.urltest.tag]),
     bundle.fragments.outbound_policy.selector.tag,
     bundle.fragments.outbound_policy.direct.tag,
     bundle.fragments.outbound_policy.block.tag,
@@ -50,7 +52,7 @@ export function composeVerifiedSingBoxConfig(
         packetEncoding: policy.node_defaults.packet_encoding,
         domainResolver: policy.node_defaults.domain_resolver,
       },
-      urltest: policy.urltest,
+      ...(policy.urltest === undefined ? {} : { urltest: policy.urltest }),
       selector: policy.selector,
       direct: policy.direct,
       block: policy.block,

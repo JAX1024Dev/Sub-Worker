@@ -7,7 +7,7 @@ export interface OutboundRenderPolicy {
     packetEncoding: 'xudp';
     domainResolver: string;
   };
-  urltest: {
+  urltest?: {
     type: 'urltest';
     tag: string;
     url: string;
@@ -37,8 +37,8 @@ export interface OutboundRenderPolicy {
   serviceSelectors?: {
     type: 'selector';
     tag: string;
-    default: 'global' | 'direct' | 'block' | 'uk';
-    choices: ('global' | 'nodes' | 'direct' | 'block' | 'uk')[];
+    default: 'global' | 'direct' | 'block' | 'uk' | 'uk_node';
+    choices: ('global' | 'nodes' | 'direct' | 'block' | 'uk' | 'uk_node')[];
   }[];
   reservedTags: readonly string[];
 }
@@ -88,8 +88,14 @@ function stableNodeTag(node: CanonicalNode): string {
 
 function createStableNodeTags(nodes: CanonicalNode[], reservedTags: readonly string[]): string[] {
   const used = new Set(reservedTags);
+  const counts = new Map<string, number>();
+  for (const node of nodes) {
+    const name = node.name || 'node';
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
   return nodes.map((node) => {
-    const base = stableNodeTag(node);
+    const name = node.name || 'node';
+    const base = counts.get(name) === 1 && !used.has(name) ? name : stableNodeTag(node);
     let candidate = base;
     let suffix = 2;
     while (used.has(candidate)) {
@@ -152,24 +158,32 @@ export function generateOutboundsFromPolicy(
   const nodeOutbounds = nodes.map((node, index) =>
     renderNode(node, nodeTags[index] ?? '', policy.nodeDefaults),
   );
+  const ukNodeTags = nodes.flatMap((node, index) =>
+    isUkNodeName(node.name) ? [nodeTags[index] ?? ''] : [],
+  );
 
   return {
     nodeTags,
     outbounds: [
       ...nodeOutbounds,
-      {
-        type: policy.urltest.type,
-        tag: policy.urltest.tag,
-        outbounds: nodeTags,
-        url: policy.urltest.url,
-        interval: policy.urltest.interval,
-        tolerance: policy.urltest.tolerance,
-      },
+      ...(policy.urltest === undefined
+        ? []
+        : [
+            {
+              type: policy.urltest.type,
+              tag: policy.urltest.tag,
+              outbounds: nodeTags,
+              url: policy.urltest.url,
+              interval: policy.urltest.interval,
+              tolerance: policy.urltest.tolerance,
+            } as Outbound,
+          ]),
       {
         type: policy.selector.type,
         tag: policy.selector.tag,
-        outbounds: [policy.urltest.tag, ...nodeTags],
-        default: policy.selector.default,
+        outbounds: [...(policy.urltest === undefined ? [] : [policy.urltest.tag]), ...nodeTags],
+        default:
+          policy.selector.default === 'first_node' ? (nodeTags[0] ?? '') : policy.selector.default,
       },
       ...(policy.regionSelectors ?? []).map((selector): Outbound => {
         const matched = nodes.flatMap((node, index) =>
@@ -186,6 +200,7 @@ export function generateOutboundsFromPolicy(
       ...(policy.serviceSelectors ?? []).map((selector): Outbound => {
         const choiceTags = selector.choices.flatMap((choice) => {
           if (choice === 'nodes') return nodeTags;
+          if (choice === 'uk_node') return ukNodeTags.length > 0 ? ukNodeTags : [policy.block.tag];
           if (choice === 'global') return [policy.selector.tag];
           if (choice === 'direct') return [policy.direct.tag];
           if (choice === 'block') return [policy.block.tag];
@@ -194,11 +209,13 @@ export function generateOutboundsFromPolicy(
         const defaultTag =
           selector.default === 'global'
             ? policy.selector.tag
-            : selector.default === 'uk'
-              ? policy.regionSelectors?.[0]?.tag
-              : selector.default === 'direct'
-                ? policy.direct.tag
-                : policy.block.tag;
+            : selector.default === 'uk_node'
+              ? (ukNodeTags[0] ?? policy.block.tag)
+              : selector.default === 'uk'
+                ? policy.regionSelectors?.[0]?.tag
+                : selector.default === 'direct'
+                  ? policy.direct.tag
+                  : policy.block.tag;
         if (defaultTag === undefined || !choiceTags.includes(defaultTag))
           throw new Error('Service selector default is unavailable.');
         return {

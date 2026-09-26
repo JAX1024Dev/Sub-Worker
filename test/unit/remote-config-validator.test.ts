@@ -36,10 +36,10 @@ describe('remote configuration runtime validator', () => {
     );
   });
 
-  it('rejects duplicate regional selector tags and unsafe domain-suffix rules', () => {
+  it('rejects duplicate service selector tags and unsafe domain-suffix rules', () => {
     const duplicate = structuredClone(iosBundle);
-    const selector = duplicate.fragments.outbound_policy.region_selectors[0];
-    if (selector === undefined) throw new Error('Missing UK selector');
+    const selector = duplicate.fragments.outbound_policy.service_selectors[0];
+    if (selector === undefined) throw new Error('Missing service selector');
     selector.tag = '🚀 节点选择';
     expect(() => parseRemoteConfigBundle(duplicate, 'ios')).toThrow(
       expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),

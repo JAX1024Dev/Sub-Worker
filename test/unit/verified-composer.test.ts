@@ -24,15 +24,12 @@ describe('verified sing-box composer', () => {
     (clientType, source) => {
       const bundle = parseRemoteConfigBundle(source, clientType);
       const config = composeVerifiedSingBoxConfig([fakeCanonicalNode], bundle, 'test-cache');
-      expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
-        type: 'selector',
-        outbounds: ['block'],
-        default: 'block',
-      });
+      expect(config.outbounds.some((outbound) => outbound.tag === 'uk')).toBe(false);
+      expect(config.outbounds.some((outbound) => outbound.type === 'urltest')).toBe(false);
       expect(config.route.final).toBe('🚀 节点选择');
       expect(config.experimental?.cache_file).toEqual({ enabled: true, cache_id: 'test-cache' });
       expect(config.route.rules).toContainEqual({
-        domain_suffix: ['kraken.com', 'krak.app'],
+        domain_suffix: ['kraken.com', 'krak.app', 'kraken.zendesk.com'],
         action: 'route',
         outbound: '💷 Kraken/Krak',
       });
@@ -46,7 +43,7 @@ describe('verified sing-box composer', () => {
         default: 'block',
       });
       expect(config.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak')).toMatchObject({
-        default: 'uk',
+        default: 'block',
       });
       for (const tag of [
         '🤖 AI',
@@ -68,10 +65,11 @@ describe('verified sing-box composer', () => {
       expect(index('ads')).toBeLessThan(index('geosite-cn'));
       expect(index('youtube')).toBeLessThan(index('google'));
       expect(index('microsoft')).toBeLessThan(index('geosite-cn'));
+      expect(index('github')).toBeLessThan(index('microsoft'));
     },
   );
 
-  it('restricts the UK selector to matching node labels and never falls back to generic proxy', () => {
+  it('defaults Kraken directly to a UK node without exposing a UK group', () => {
     const bundle = parseRemoteConfigBundle(iosBundleSource, 'ios');
     const config = composeVerifiedSingBoxConfig(
       [
@@ -81,31 +79,62 @@ describe('verified sing-box composer', () => {
       ],
       bundle,
     );
-    const uk = config.outbounds.find((outbound) => outbound.tag === 'uk');
-    expect(uk).toMatchObject({ type: 'selector' });
-    if (uk?.type !== 'selector') throw new Error('UK selector missing');
-    expect(uk.outbounds).toHaveLength(2);
-    expect(uk.outbounds[0]).toMatch(/^UK London \[[0-9a-f]{8}\]$/u);
-    expect(uk.outbounds[1]).toMatch(/^🇬🇧 英国 \[[0-9a-f]{8}\]$/u);
-    expect(uk.default).toBe(uk.outbounds[0]);
+    expect(config.outbounds.some((outbound) => outbound.tag === 'uk')).toBe(false);
+    const kraken = config.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
+    if (kraken?.type !== 'selector') throw new Error('Kraken selector missing');
+    expect(kraken.default).toBe('UK London');
+    expect(kraken.outbounds).toContain('🇬🇧 英国');
+    expect(kraken.outbounds).toContain('block');
+    expect(kraken.outbounds).toContain('🚀 节点选择');
   });
 
-  it('uses bundle-owned logging, urltest, and outbound policy values', () => {
+  it('keeps old auto and UK bundles readable during a staged release', () => {
+    const policy = iosBundleSource.fragments.outbound_policy;
+    const source = {
+      ...iosBundleSource,
+      fragments: {
+        ...iosBundleSource.fragments,
+        outbound_policy: {
+          ...policy,
+          urltest: {
+            type: 'urltest',
+            tag: 'auto',
+            url: 'https://www.gstatic.com/generate_204',
+            interval: '3m',
+            tolerance: 50,
+          },
+          selector: { ...policy.selector, default: 'auto' },
+          region_selectors: [{ type: 'selector', tag: 'uk', region: 'uk', on_missing: 'block' }],
+          service_selectors: policy.service_selectors.map((selector) =>
+            selector.tag === '💷 Kraken/Krak'
+              ? { ...selector, default: 'uk', choices: ['uk', 'global', 'nodes', 'direct'] }
+              : selector,
+          ),
+        },
+      },
+    };
+
+    const config = composeVerifiedSingBoxConfig(
+      [{ ...fakeCanonicalNode, name: 'UK London' }],
+      parseRemoteConfigBundle(source, 'ios'),
+    );
+    expect(config.outbounds.find((outbound) => outbound.tag === 'auto')).toMatchObject({
+      type: 'urltest',
+    });
+    expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
+      type: 'selector',
+    });
+  });
+
+  it('uses bundle-owned logging and outbound policy values', () => {
     const source = structuredClone(iosBundleSource);
     source.fragments.common.log.level = 'debug';
-    source.fragments.outbound_policy.urltest.url = 'https://example.invalid/health';
-    source.fragments.outbound_policy.urltest.interval = '5m';
-    source.fragments.outbound_policy.urltest.tolerance = 25;
     const bundle = parseRemoteConfigBundle(source, 'ios');
 
     const config = composeVerifiedSingBoxConfig([fakeCanonicalNode], bundle);
 
     expect(config.log.level).toBe('debug');
-    expect(config.outbounds.find((outbound) => outbound.type === 'urltest')).toMatchObject({
-      url: 'https://example.invalid/health',
-      interval: '5m',
-      tolerance: 25,
-    });
+    expect(config.outbounds.some((outbound) => outbound.type === 'urltest')).toBe(false);
     expect(config.outbounds.find((outbound) => outbound.type === 'direct')).toMatchObject({
       network_strategy: 'hybrid',
     });
@@ -128,7 +157,7 @@ describe('verified sing-box composer', () => {
     expect(nodeTags[0]).toMatch(/^auto \[[0-9a-f]{8}\]$/u);
     expect(nodeTags[1]).toBe(`${String(nodeTags[0])} (2)`);
     expect(nodeTags[2]).toMatch(/^dns-cn \[[0-9a-f]{8}\]$/u);
-    expect(nodeTags[3]).toMatch(/^node \[[0-9a-f]{8}\]$/u);
+    expect(nodeTags[3]).toBe('node');
     expect(new Set(config.outbounds.map((outbound) => outbound.tag)).size).toBe(
       config.outbounds.length,
     );
@@ -153,6 +182,7 @@ describe('verified sing-box composer', () => {
         .filter((outbound) => outbound.type === 'vless')
         .map((outbound) => outbound.tag);
     expect(new Set(tags(a))).toEqual(new Set(tags(b)));
+    expect(tags(a)).toEqual(['USA', 'UK London']);
     const ai = a.outbounds.find((outbound) => outbound.tag === '🤖 AI');
     expect(ai).toMatchObject({ type: 'selector', default: '🚀 节点选择' });
     if (ai?.type !== 'selector') throw new Error('AI selector missing');

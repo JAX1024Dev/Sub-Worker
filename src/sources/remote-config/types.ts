@@ -49,7 +49,7 @@ export interface OutboundPolicyFragment {
     packet_encoding: 'xudp';
     domain_resolver: string;
   };
-  urltest: {
+  urltest?: {
     type: 'urltest';
     tag: 'auto';
     url: string;
@@ -59,13 +59,13 @@ export interface OutboundPolicyFragment {
   selector: {
     type: 'selector';
     tag: string;
-    default: 'auto';
+    default: 'auto' | 'first_node';
   };
   service_selectors?: {
     type: 'selector';
     tag: string;
-    default: 'global' | 'direct' | 'block' | 'uk';
-    choices: ('global' | 'nodes' | 'direct' | 'block' | 'uk')[];
+    default: 'global' | 'direct' | 'block' | 'uk' | 'uk_node';
+    choices: ('global' | 'nodes' | 'direct' | 'block' | 'uk' | 'uk_node')[];
   }[];
   direct: {
     type: 'direct';

@@ -72,7 +72,7 @@ interface OutboundPolicyFragment {
     packet_encoding: 'xudp';
     domain_resolver: string;
   };
-  urltest: TaggedValue & Record<string, unknown>;
+  urltest?: TaggedValue & Record<string, unknown>;
   selector: TaggedValue & Record<string, unknown>;
   direct: TaggedValue & Record<string, unknown>;
   block: TaggedValue & Record<string, unknown>;
@@ -237,7 +237,7 @@ function validateSemantics(bundle: ConfigBundle): void {
   const ruleSetTags = assertUniqueTags(route.route.rule_set, 'Route rule sets');
   const outboundTags = assertUniqueTags(
     [
-      outboundPolicy.urltest,
+      ...(outboundPolicy.urltest === undefined ? [] : [outboundPolicy.urltest]),
       outboundPolicy.selector,
       outboundPolicy.direct,
       outboundPolicy.block,
@@ -247,8 +247,11 @@ function validateSemantics(bundle: ConfigBundle): void {
     'Fixed outbounds',
   );
 
-  for (const required of ['auto', outboundPolicy.selector.tag, 'direct', 'block']) {
+  for (const required of [outboundPolicy.selector.tag, 'direct', 'block']) {
     requireTag(outboundTags, required, 'Outbound policy');
+  }
+  if (outboundPolicy.selector.default === 'auto' && !outboundTags.has('auto')) {
+    throw new Error('Auto default requires a urltest outbound.');
   }
   for (const selector of outboundPolicy.service_selectors ?? []) {
     if (!selector.choices.includes(selector.default)) {

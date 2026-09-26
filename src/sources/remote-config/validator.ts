@@ -371,29 +371,31 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
     !isRecord(value) ||
     !hasKeys(
       value,
-      ['node_defaults', 'urltest', 'selector', 'direct', 'block'],
-      ['region_selectors', 'service_selectors'],
+      ['node_defaults', 'selector', 'direct', 'block'],
+      ['urltest', 'region_selectors', 'service_selectors'],
     ) ||
     !isRecord(value.node_defaults) ||
     !hasKeys(value.node_defaults, ['packet_encoding', 'domain_resolver']) ||
     value.node_defaults.packet_encoding !== 'xudp' ||
     !isNonEmptyString(value.node_defaults.domain_resolver) ||
-    !isRecord(value.urltest) ||
-    !hasKeys(value.urltest, ['type', 'tag', 'url', 'interval', 'tolerance']) ||
-    value.urltest.type !== 'urltest' ||
-    value.urltest.tag !== 'auto' ||
-    typeof value.urltest.url !== 'string' ||
-    !value.urltest.url.startsWith('https://') ||
-    typeof value.urltest.interval !== 'string' ||
-    !outboundDurationPattern.test(value.urltest.interval) ||
-    !Number.isInteger(value.urltest.tolerance) ||
-    typeof value.urltest.tolerance !== 'number' ||
-    value.urltest.tolerance < 0 ||
+    (value.urltest !== undefined &&
+      (!isRecord(value.urltest) ||
+        !hasKeys(value.urltest, ['type', 'tag', 'url', 'interval', 'tolerance']) ||
+        value.urltest.type !== 'urltest' ||
+        value.urltest.tag !== 'auto' ||
+        typeof value.urltest.url !== 'string' ||
+        !value.urltest.url.startsWith('https://') ||
+        typeof value.urltest.interval !== 'string' ||
+        !outboundDurationPattern.test(value.urltest.interval) ||
+        !Number.isInteger(value.urltest.tolerance) ||
+        typeof value.urltest.tolerance !== 'number' ||
+        value.urltest.tolerance < 0)) ||
     !isRecord(value.selector) ||
     !hasKeys(value.selector, ['type', 'tag', 'default']) ||
     value.selector.type !== 'selector' ||
     (value.selector.tag !== 'proxy' && value.selector.tag !== '🚀 节点选择') ||
-    value.selector.default !== 'auto' ||
+    !['auto', 'first_node'].includes(String(value.selector.default)) ||
+    (value.selector.default === 'auto' && value.urltest === undefined) ||
     !isRecord(value.direct) ||
     !hasKeys(value.direct, ['type', 'tag'], ['network_strategy']) ||
     value.direct.type !== 'direct' ||
@@ -425,12 +427,12 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
             hasKeys(selector, ['type', 'tag', 'default', 'choices']) &&
             selector.type === 'selector' &&
             isNonEmptyString(selector.tag) &&
-            ['global', 'direct', 'block', 'uk'].includes(String(selector.default)) &&
+            ['global', 'direct', 'block', 'uk', 'uk_node'].includes(String(selector.default)) &&
             Array.isArray(selector.choices) &&
             selector.choices.length > 0 &&
             selector.choices.length <= 5 &&
             selector.choices.every((choice) =>
-              ['global', 'nodes', 'direct', 'block', 'uk'].includes(String(choice)),
+              ['global', 'nodes', 'direct', 'block', 'uk', 'uk_node'].includes(String(choice)),
             ) &&
             new Set(selector.choices).size === selector.choices.length &&
             selector.choices.includes(selector.default),
@@ -447,7 +449,9 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
   const httpClientTags = new Set(bundle.fragments.route.http_clients.map((client) => client.tag));
   const ruleSetTags = new Set(bundle.fragments.route.route.rule_set.map((ruleSet) => ruleSet.tag));
   const tags = [
-    bundle.fragments.outbound_policy.urltest.tag,
+    ...(bundle.fragments.outbound_policy.urltest === undefined
+      ? []
+      : [bundle.fragments.outbound_policy.urltest.tag]),
     bundle.fragments.outbound_policy.selector.tag,
     bundle.fragments.outbound_policy.direct.tag,
     bundle.fragments.outbound_policy.block.tag,

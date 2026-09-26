@@ -6,7 +6,7 @@
       { "protocol": "dns", "action": "hijack-dns" },
       { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },
       {
-        "domain_suffix": ["kraken.com", "krak.app"],
+        "domain_suffix": ["kraken.com", "krak.app", "kraken.zendesk.com"],
         "action": "route",
         "outbound": "💷 Kraken/Krak"
       },
@@ -19,9 +19,9 @@
       { "rule_set": "media", "action": "route", "outbound": "🎬 流媒体" },
       { "rule_set": "telegram", "action": "route", "outbound": "✈️ Telegram" },
       { "rule_set": "apple", "action": "route", "outbound": "🍎 苹果" },
+      { "rule_set": "github", "action": "route", "outbound": "💻 GitHub" },
       { "rule_set": "microsoft-cn", "action": "route", "outbound": "Ⓜ️ 微软" },
       { "rule_set": "microsoft", "action": "route", "outbound": "Ⓜ️ 微软" },
-      { "rule_set": "github", "action": "route", "outbound": "💻 GitHub" },
       { "rule_set": "google", "action": "route", "outbound": "🔍 谷歌" },
       { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
       { "action": "resolve" },
