@@ -1,6 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
 
-import type { ClientType } from '../src/domain/canonical-node.js';
 import { composeSingBoxConfig } from '../src/renderers/sing-box/composer.js';
 import { composeVerifiedSingBoxConfig } from '../src/renderers/sing-box/verified-composer.js';
 import { parseRemoteConfigBundle } from '../src/sources/remote-config/validator.js';
@@ -15,17 +14,18 @@ await validateConfigSources();
 const bundles = await buildConfigBundles();
 await assertPublishedBundlesCurrent(bundles);
 
-const failures: ClientType[] = [];
+const failures: string[] = [];
 for (const [clientType, bundle] of bundles) {
+  const verifiedBundle = parseRemoteConfigBundle(bundle, clientType);
   const legacy = composeSingBoxConfig(
     [fakeCanonicalNode],
     clientType,
     clientType === 'ios' ? { iosRoutingMode: 'tun-dual-stack' } : {},
   );
-  const current = composeVerifiedSingBoxConfig(
-    [fakeCanonicalNode],
-    parseRemoteConfigBundle(bundle, clientType),
-    'test-cache',
+  const current = composeVerifiedSingBoxConfig([fakeCanonicalNode], verifiedBundle, 'test-cache');
+  const withUkNode = composeVerifiedSingBoxConfig(
+    [fakeCanonicalNode, { ...fakeCanonicalNode, sourceIndex: 1, name: 'UK London' }],
+    verifiedBundle,
   );
   const selectors = current.outbounds.filter((outbound) => outbound.type === 'selector');
   const required = [
@@ -54,13 +54,40 @@ for (const [clientType, bundle] of bundles) {
     current.route.final !== '🚀 节点选择' ||
     current.experimental?.cache_file.cache_id !== 'test-cache'
   ) {
-    failures.push(clientType);
+    failures.push(`${clientType}: platform or service-group baseline`);
+  }
+
+  const global = current.outbounds.find((outbound) => outbound.tag === '🚀 节点选择');
+  const krakenWithoutUk = current.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
+  const krakenWithUk = withUkNode.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
+  const routeIndex = (tag: string) =>
+    current.route.rules.findIndex((rule) => 'rule_set' in rule && rule.rule_set === tag);
+  const krakenRule = current.route.rules.find(
+    (rule) => 'domain_suffix' in rule && rule.outbound === '💷 Kraken/Krak',
+  );
+  const krakenDomains = krakenRule && 'domain_suffix' in krakenRule ? krakenRule.domain_suffix : [];
+  if (
+    global?.type !== 'selector' ||
+    !isDeepStrictEqual(global.outbounds, ['Example node']) ||
+    global.default !== 'Example node' ||
+    krakenWithoutUk?.type !== 'selector' ||
+    !isDeepStrictEqual(krakenWithoutUk.outbounds, ['block', '🚀 节点选择']) ||
+    krakenWithoutUk.default !== 'block' ||
+    krakenWithUk?.type !== 'selector' ||
+    !isDeepStrictEqual(krakenWithUk.outbounds, ['UK London', '🚀 节点选择', 'block']) ||
+    krakenWithUk.default !== 'UK London' ||
+    current.outbounds.some((outbound) => outbound.tag === 'auto' || outbound.tag === 'uk') ||
+    routeIndex('github') < 0 ||
+    routeIndex('github') >= routeIndex('microsoft') ||
+    !krakenDomains.includes('kraken.zendesk.com')
+  ) {
+    failures.push(`${clientType}: selector or route-policy invariant`);
   }
 }
 
 if (failures.length > 0) {
   throw new Error(
-    `Remote bundles violate platform or service routing invariants: ${failures.join(', ')}.`,
+    `Remote bundles violate platform or service routing invariants: ${failures.join('; ')}.`,
   );
 }
 console.log('All remote bundles preserve platform invariants and provide service selectors.');

@@ -1,6 +1,6 @@
 # ADR 0020：独立可切换服务策略组
 
-状态：已接受；维护者于 2026-09-23 明确授权跳过 staging 实机验证直接发布 production。取代 ADR 0019 的固定服务出口决策；0019 保留为历史记录。
+状态：已发布 production（2026-09-23）；维护者明确授权跳过 staging 实机验证。取代 ADR 0019 的固定服务出口决策；0019 保留为历史记录。
 
 ## 背景
 
@@ -16,4 +16,4 @@ ADR 0019 将多个服务固定到普通代理，Microsoft 海外域名也走代�
 
 ## 取舍与验证
 
-更多远程规则集增加首次启动耗时与内存；广告误判或服务分类交叠可能影响访问，规则顺序和分组可通过 GitHub 配置片段审查。`cache_file` 属客户端本地状态；Windows/Linux core 若需交互，须自行配置受保护的本地 API/UI。五平台运行 `sing-box 1.14.0 check` 后，仍须在 iOS/macOS 实机验证选择持久化、DNS、双栈、常用 App 与英国出口 IP。本次明确授权直发；发布后须检查线上返回配置和实机行为，异常时回退 production manifest 与 Worker 版本。
+更多远程规则集增加首次启动耗时与内存；广告误判或服务分类交叠可能影响访问，规则顺序和分组可通过 GitHub 配置片段审查。`cache_file` 属客户端本地状态；Windows/Linux core 若需交互，须自行配置受保护的本地 API/UI。发布前五平台通过 `sing-box 1.14.0 check`，发布后五平台 production 订阅均返回预期策略组和默认值；这不等于实机验证。仍须在 iOS/macOS 验证选择持久化、DNS、双栈、常用 App 与英国出口 IP。异常时回退 production manifest 与 Worker 版本；部署细节见 [RELEASE.md](../RELEASE.md)。

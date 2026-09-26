@@ -15,6 +15,14 @@ const metadataHeaders = {
 
 const upstreamTimeoutMilliseconds = 10_000;
 
+async function cancelBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Preserve the original upstream error if cancellation fails.
+  }
+}
+
 function readMetadata(headers: Headers): SubscriptionMetadata {
   const metadata: SubscriptionMetadata = {};
 
@@ -37,6 +45,7 @@ async function readBoundedBody(response: Response): Promise<Uint8Array> {
       parsedLength < 0 ||
       parsedLength > subscriptionLimits.encodedBytes
     ) {
+      await cancelBody(response);
       throw new ServiceError('UPSTREAM_RESPONSE_TOO_LARGE', 'Subscription response is too large.');
     }
   }
@@ -53,13 +62,21 @@ async function readBoundedBody(response: Response): Promise<Uint8Array> {
   while (!result.done) {
     const value: unknown = result.value;
     if (!(value instanceof Uint8Array)) {
-      await reader.cancel();
+      try {
+        await reader.cancel();
+      } catch {
+        // Preserve the invalid-body error.
+      }
       throw new ServiceError('INVALID_SUBSCRIPTION', 'Subscription response body is invalid.');
     }
 
     totalBytes += value.byteLength;
     if (totalBytes > subscriptionLimits.encodedBytes) {
-      await reader.cancel();
+      try {
+        await reader.cancel();
+      } catch {
+        // Preserve the size-limit error.
+      }
       throw new ServiceError('UPSTREAM_RESPONSE_TOO_LARGE', 'Subscription response is too large.');
     }
     chunks.push(value);
@@ -101,15 +118,15 @@ export async function fetchSubscription(
   }
 
   if (response.status === 401 || response.status === 403 || response.status === 404) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new ServiceError('SUBSCRIPTION_NOT_FOUND', 'Subscription is unavailable.');
   }
   if (response.status >= 300 && response.status < 400) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new ServiceError('UPSTREAM_REDIRECT', 'Subscription upstream redirected the request.');
   }
   if (!response.ok) {
-    await response.body?.cancel();
+    await cancelBody(response);
     throw new ServiceError('UPSTREAM_ERROR', 'Subscription upstream returned an error.');
   }
 

@@ -1,7 +1,6 @@
 # 开发与部署
 
-> 当前仓库已完成 MVP 主链路，正在准备把静态客户端配置迁移到 GitHub 发布的配置包。
-> 迁移期间现有 Generator 仍是行为基线，不能在远程链路完成验证前删除。
+> 当前 Worker 已从 GitHub channel 加载经摘要校验的配置包。旧 Generator 只保留为测试对照，不参与运行时回退。
 
 ## 1. 工具链
 
@@ -25,10 +24,8 @@ src/
 ├── parsers/             分享链接 parser
 ├── sources/remote-config/ manifest、bundle 获取与校验
 ├── renderers/sing-box/  节点 outbounds 与确定性配置组装
-├── config/              远程片段 schema 与运行时 validator（目标）
-├── platforms/           迁移前的平台行为基线
-├── security/            请求和上游策略
-└── observability/       结构化日志
+├── platforms/           旧平台行为基线（仅供测试对照）
+└── security/            请求和上游策略
 test/
 ├── unit/
 ├── integration/
@@ -100,20 +97,20 @@ curl --fail-with-body \
 | 构建                     | `pnpm build`                     |
 | 发布前完整门禁           | `pnpm release:check`             |
 
-配置契约阶段已提供以下稳定命令：
+配置管理命令：
 
-| 目的                               | 命令                                      |
-| ---------------------------------- | ----------------------------------------- |
-| 校验全部源片段、profile 和引用     | `pnpm config:validate`                    |
-| 确定性生成五个平台 bundle          | `pnpm config:build`                       |
-| 检查 bundle 最新及未变更的基线行为 | `pnpm config:diff`                        |
-| 校验已发布 channel 与 Git 对象     | `pnpm config:channels:check`              |
-| 发布 staging manifest              | `pnpm config:publish:staging -- <commit>` |
-| 提升 staging 到 production         | `pnpm config:promote:production`          |
+| 目的                                | 命令                                      |
+| ----------------------------------- | ----------------------------------------- |
+| 校验全部源片段、profile 和引用      | `pnpm config:validate`                    |
+| 确定性生成五个平台 bundle           | `pnpm config:build`                       |
+| 检查 bundle 最新及平台/策略组不变量 | `pnpm config:diff`                        |
+| 校验已发布 channel 与 Git 对象      | `pnpm config:channels:check`              |
+| 发布 staging manifest               | `pnpm config:publish:staging -- <commit>` |
+| 提升 staging 到 production          | `pnpm config:promote:production`          |
 
 发布命令只读取已提交的 Git 对象。staging 命令要求完整 40 位 commit SHA，production 命令
-只复制当前 staging 的 URL 与摘要，不重建 bundle。channel 尚未首次发布时，检查命令允许
-目录中只有说明文件，但不会生成占位 URL 或摘要。
+只复制当前 staging 的 URL 与摘要，不重建 bundle。两个 channel 现均已发布；不得将
+本地未提交的 bundle 路径直接写进 manifest。
 
 Worker 的 binding 类型通过 Wrangler 生成，不手写与配置重复的 Env 接口。
 
@@ -155,7 +152,7 @@ CI 使用固定的 1.14.0 二进制及校验和，或固定 digest 的容器镜�
 macOS 校验 Linux fixture 时，脚本仅在临时副本中移除 Linux 专属的
 `auto_redirect`，避免宿主平台初始化失败；仓库中的原始 fixture 不会被修改，且平台字段由单元测试断言。
 
-重构后，每个 profile bundle 必须先用脱敏 fixture 节点组合为完整配置，再执行同一版本的
+每个 profile bundle 必须先用脱敏 fixture 节点组合为完整配置，再执行同一版本的
 `sing-box check`。bundle 本身不是完整 sing-box 配置，不能只做 JSON 语法检查。
 
 ### E2E
@@ -170,7 +167,7 @@ macOS 校验 Linux fixture 时，脚本仅在临时副本中移除 Linux 专属�
   macOS 客户端后测试 IPv4/IPv6、中国/非中国、TCP 与 UDP。报告不得包含 Subscription ID、
   请求 URL、节点链接或完整配置。
 - `pnpm test:macos:dual-stack -- --check-only --config <file>` 可只校验本地配置。
-- `pnpm test:rulesets` 实时下载固定 revision 的三个规则集并核对 SHA-256，同时验证 iOS
+- `pnpm test:rulesets` 实时下载固定 revision 的所需规则集并核对 SHA-256，同时验证 iOS
   显式中国 IPv6 旁路与固定 `geoip-cn` 完全一致；该网络测试也不进入默认门禁。
 - 真实测试只使用专用 3x-ui 测试用户；完整 E2E 只针对 staging Worker。
 - 发布前 E2E 还应覆盖 staging 配置导入和基本连通性。
@@ -213,11 +210,10 @@ pnpm build
 - 启用 `nodejs_compat`。
 - 启用 Workers Observability 并设置采样率。
 - 禁用 invocation logs 和 tracing，防止 URL path 中的 Subscription ID 被平台自动采集。
-- 设置合理的 CPU 上限。
 - 不声明 KV、D1、R2 或 Durable Objects binding。
 - 普通配置使用 vars，敏感配置使用 Secret。
-- 重构完成后仅保留 `SING_BOX_CONFIG_MANIFEST_URL` 选择配置 channel；
-  `IOS_ROUTING_MODE`、`MACOS_ROUTING_MODE` 等配置细节迁移到 profile，不再作为 Worker
+- 使用 `SING_BOX_CONFIG_MANIFEST_URL` 选择配置 channel；
+  `IOS_ROUTING_MODE`、`MACOS_ROUTING_MODE` 等配置细节已迁移到 profile，不再作为 Worker
   bindings。Wrangler 的环境 vars 不继承，staging 与 production 必须分别声明 manifest。
 
 ## 10. 部署
@@ -242,14 +238,19 @@ pnpm deploy:production
 
 Worker 代码部署与配置发布是两条流程：只有 TypeScript、schema 兼容范围或 bindings
 变化才部署 Worker；兼容 schema 内的 TUN、DNS、route 和平台参数通过 GitHub channel
-发布。不得通过直接修改 production manifest 绕过 staging 验证。
+发布。常规变更不得通过直接修改 production manifest 绕过 staging 验证；维护者明确
+授权的例外须记录原因、执行静态检查并在发布后验证五平台线上响应。
 
 生产发布要求：
 
 - CI 门禁通过。
-- staging 验证同一提交或构建产物。
+- staging 验证同一提交或构建产物；例外需单独记录。
 - Secret、自定义域名、速率限制和日志策略已配置。
 - 使用 Wrangler Versions/Deployments 保留可回滚版本。
+
+2026-09-23 的独立服务策略组按明确授权直发：先部署能读取旧 bundle 的 Worker，再将
+production manifest 指向新 bundle。GitHub Raw 对 `main` 路径可能短暂返回旧内容；
+确认线上返回 `route.final = 🚀 节点选择` 和预期策略组后才视为配置切换完成。
 
 ## 11. 升级流程
 
@@ -276,46 +277,9 @@ Worker 代码部署与配置发布是两条流程：只有 TypeScript、schema �
 - 服务安全边界变化：更新 [SECURITY.md](./SECURITY.md)。
 - 已接受的重要取舍：新增 ADR；ADR 只记录理由并链接详细规格。
 
-## 13. 重构阶段
+## 13. 当前维护重点
 
-### 阶段 A：配置契约
-
-- **已完成**：创建 `example/sing-box/`、manifest/bundle/profile schema 和脱敏片段。
-- **已完成**：实现离线 build/validate/diff，Worker 运行路径未修改。
-- **已完成**：五个平台 bundle 的平台字段回归与服务组不变量检查。
-
-### 阶段 B：远程配置适配器
-
-- **已完成**：实现固定 origin/owner/repo/path、完整 commit SHA 和平台文件名校验。
-- **已完成**：实现 5 秒超时、手动重定向、64 KiB/512 KiB 流式限长和 content type 校验。
-- **已完成**：实现 Web Crypto SHA-256、严格 JSON、运行时结构和跨片段引用校验。
-- **已完成**：全部网络测试使用 mock；适配器已在 Phase D 接入 Worker 请求链路。
-
-### 阶段 C：确定性 Composer
-
-- **已完成**：实现 `CanonicalNode[] + VerifiedProfileBundle` 的显式字段组装。
-- **已完成**：节点、urltest 和 selector 动态 tag 数组通过受控插槽生成。
-- **已完成**：配置中的节点默认值、固定出站、DNS、TUN 和 route 均由 bundle 提供。
-- **已完成**：五平台新 Composer 的平台字段回归、服务组与 route final 检查。
-- **已完成**：独立服务 selector、客户端 `cache_file` 和订阅隔离的 `cache_id`；DustinWin 固定提交每日检查并生成待审 PR。
-- 旧生成链路暂时保留用于 golden diff，不作为未来运行时 fallback。
-
-### 阶段 D：staging 切换
-
-- **已完成**：主请求链路按“3x-ui 授权与节点 → manifest/bundle → Composer”执行。
-- **已完成**：远程配置失败关闭，不回退到旧 Generator；无效订阅不会触发 GitHub 请求。
-- **已完成**：Wrangler 为本地、staging、production 声明各自的 manifest URL 并重新生成类型。
-- **已完成**：实现从不可变 Git commit 生成五平台摘要的 staging 发布命令。
-- **已完成**：配置变更自动创建 staging manifest PR，并显式触发该提交的 CI。
-- **已完成**：首次不可变 bundle、staging manifest 和 Worker 已发布。
-- **已完成**：五平台 schema、真实订阅刷新、错误路径、channel 一致性和延迟测试。
-- **待实机回归**：配置策略变化时继续执行 UDP/WebRTC 与关键应用访问测试。
-
-### 阶段 E：production 推广与清理
-
-- **已完成**：受保护工作流只推广 staging 的同一 URL 和摘要，并创建 production PR。
-- **已完成**：删除不再生效的 iOS/macOS routing-mode Worker bindings。
-- **已完成**：首次 production promotion 和 Worker 部署。
-- **待仓库设置**：确认 `configuration-production` 必需审批人与 Actions 创建 PR 权限。
-- 观察稳定后删除仅供 golden diff 使用的硬编码 Generator。
-- 后续普通配置变更只走 config publish，不再部署 Worker。
+- 配置变更先修改 `example/sing-box/` 源片段，再生成 bundle 并走 staging → production；不要手改 `published/`。
+- 服务策略组变更须同步更新 `pnpm config:diff` 的行为不变量和对应单元测试。
+- 关键应用、UDP/WebRTC 与选择持久化仍需官方客户端实机回归；静态 `sing-box check` 不能替代连通性测试。
+- 旧 Generator 仅供 golden diff；删除前须确认测试已改用等价基线并记录决策。

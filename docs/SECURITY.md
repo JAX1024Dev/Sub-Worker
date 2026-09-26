@@ -42,6 +42,7 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - VLESS UUID 和完整分享链接。
 - REALITY 参数。
 - 生成的完整 sing-box 配置。
+- 由 Subscription ID 派生的客户端 `cache_id`：虽不包含明文 ID，也不应写入日志或公开索引。
 
 处理要求：
 
@@ -128,12 +129,13 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - Remote Config Source 不得接收 Subscription ID、节点、3x-ui URL 或客户端请求头，因此
   不可能把用户 secret 发送到 GitHub。
 - 任一验证失败必须失败关闭；不得使用部分 bundle、代码内隐式默认或未知旧版本。
-- 当前 Remote Config Source 已实现上述读取与验证边界，但在 Composer 迁移完成前不进入
-  用户请求链路。
+- Remote Config Source 已进入生产请求链路；GitHub 内容始终按不可信输入处理。
 
 ### GitHub 供应链
 
-- production channel 启用 branch protection、CODEOWNERS、必需 CI 和受保护环境审批。
+- production channel 应启用 branch protection、CODEOWNERS、必需 CI 和受保护环境审批；
+  2026-09-23 经维护者明确授权的直发例外已记录在 [ADR 0020](./adr/0020-selectable-service-policies.md)
+  与 [RELEASE.md](./RELEASE.md)，不能当作默认发布权限。
 - GitHub Actions 默认只读权限；发布 job 仅获得目标路径所需的最小写权限。
 - channel 发布 job 只在创建专用分支、PR 和显式 dispatch CI 时获得
   `contents: write`、`pull-requests: write` 与 `actions: write`。

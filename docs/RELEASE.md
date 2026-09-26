@@ -12,7 +12,7 @@ pnpm install --frozen-lockfile
 pnpm release:check
 ```
 
-完整门禁包含 lint、格式、类型、62+ 项测试、五平台配置检查、Worker dry-run、
+完整门禁包含 lint、格式、类型、单元及集成测试、五平台配置检查、Worker dry-run、
 规则集 SHA-256、真实订阅 E2E、真实配置 sing-box 检查和依赖审计。
 
 ## Staging
@@ -56,19 +56,41 @@ pnpm deploy:production
 
 发布后记录 Cloudflare deployment version，并用不含 secret 的 request ID 验证错误日志。
 
-## 最新发布记录
+## 最新发布记录：简化策略组与 Kraken 限定（2026-09-26）
+
+- 实现提交 `34ceb50a5483d8bee7681eea73aeaa5c247cdef9`；Kraken 可选项收紧的 bundle 提交 `852233cac5d9781781b7194f53dd7e0fb9692442`。
+- staging manifest 提交 `c34ea76`，production manifest 提交 `dbfd9ed`；当前五平台均指向同一 bundle 提交。
+- staging Worker 版本 `5145dc93-28ad-4f8a-a74b-301677ff0866`，production Worker 版本 `e5426657-bc1a-40ed-9630-7460732f536b`。
+- 五平台线上配置检查已确认移除 `auto`/独立 UK 组，Kraken 只列英国标签节点、全局选择和 block；GitHub 优先于 Microsoft。静态检查不等于客户端连通性或英国出口 IP 验证。
+
+### 历史发布：独立服务策略组（2026-09-23）
 
 - 日期：2026-09-23。
-- Bundle commit：`d1f33fcc7890c6dccc6707fac3b426aff01df1c8`。
-- Channel manifest commit：`32af370`；staging 与 production 均指向同一不可变 bundle。
-- Production Worker version：`7fb8071f-4a63-467e-bf97-aeec99200919`。
-- 维护者明确批准本次跳过 staging 实机阶段直接上线 production；`pnpm check` 全通过
-  （140 项测试、五平台 sing-box 1.14.0 配置检查和 Worker dry-run）。
-- production 五个平台订阅均返回 HTTP 200，包含服务分类、Kraken/Krak 英国路由与非空
-  英国节点组，响应保留 `private, no-store`。英国节点真实出口 IP 和应用级连通性尚待
-  客户端实测；节点标签不构成地理位置证明。
+- 实现与 bundle commit：`4baf950621a1e89813cce579b037f664a92ef482`。
+- Production manifest commit：`149c60d1522fa139d1091c69d1ea121e8f651f41`；当时 staging
+  仍指向上一版固定服务路由 bundle，两个 channel 不相同。
+- Production Worker version：`a922d5a8-85bf-40a9-b758-93fa247e7c94`。
+- 维护者明确批准跳过 staging 实机阶段直发。先部署向后兼容 Worker，再更新 production
+  manifest，避免旧 Worker 读取新策略组时配置失败。
+- 当时 `pnpm check` 通过：141 项测试、五平台 sing-box 1.14.0 配置检查和 Worker dry-run；
+  `pnpm test:rulesets` 通过。五个 GitHub bundle URL 均与 manifest SHA-256 一致。
+- 生产订阅五个平台均返回新版策略组：`route.final = 🚀 节点选择`，Microsoft 默认
+  `direct`、Apple 默认全局代理、广告默认 `block`、Kraken/Krak 默认 `uk`，并启用
+  客户端 `cache_file`。GitHub Raw 的 `main` 路径有短暂旧版缓存，复查后已切到新版。
+- 以上属于配置级冒烟检查，不代表 iOS/macOS/Android 实机或英国真实出口 IP 已验证；
+  仍需检查选择持久化、DNS、双栈及常用 App 连通性。
 
-### 上次发布（2026-09-15）
+### 历史发布：固定服务分类（2026-09-23）
+
+- Bundle commit：`d1f33fcc7890c6dccc6707fac3b426aff01df1c8`。
+- Channel manifest commit：`32af370`；当时 staging 与 production 指向同一 bundle。
+- Production Worker version：`7fb8071f-4a63-467e-bf97-aeec99200919`。
+- 维护者明确批准跳过 staging 实机阶段直接上线 production；当时 `pnpm check`
+  通过 140 项测试及五平台配置检查。
+- production 五平台订阅包含固定服务分类和 Kraken/Krak 英国路由。该方案已被
+  [ADR 0020](./adr/0020-selectable-service-policies.md) 的独立可切换策略组取代。
+
+### 历史发布（2026-09-15）
 
 - 日期：2026-09-15
 - Bundle commit：`f9449437faddb1bfd5efd6fbe731b6c8e0ec135b`
@@ -80,7 +102,7 @@ pnpm deploy:production
 - iOS、macOS、Android、Windows 通过本机 sing-box 1.14.0 检查；Linux 配置通过 CI 检查，
   本机 macOS 不执行 Linux `auto_redirect` 初始化验证。
 
-## 配置发布（重构目标）
+## 配置发布
 
 兼容既有 bundle schema 的 common、DNS、TUN、平台和路由变化不发布 Worker：
 
@@ -105,8 +127,10 @@ pnpm config:channels:check
 - 五个平台使用脱敏节点组装后通过 sing-box 1.14.0 `check`；
 - staging manifest 只指向完整 commit SHA URL；
 - production promotion 使用受保护环境并记录审批；
-- 不重新构建 bundle，production 必须推广 staging 已验证的同一摘要；
-- 回滚时只把 production manifest 指回上一个已知正常摘要。
+- 常规发布不重新构建 bundle，production 推广 staging 已验证的同一摘要；直发例外
+  必须由维护者明确授权，并记录 bundle commit、manifest commit 和线上验证结果。
+- 纯配置回滚把 production manifest 指回上一个已知正常摘要；若组合代码有问题，
+  还需回滚 Worker 版本。两者应按兼容顺序操作。
 
 以下变化仍必须部署 Worker：manifest/bundle schema、字段所有权、组合算法、节点 parser、
 renderer、HTTP API、bindings 或安全策略。

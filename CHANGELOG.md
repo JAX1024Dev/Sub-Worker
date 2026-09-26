@@ -4,6 +4,58 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Improved
+
+- Cancel rejected 3x-ui response streams, including oversized declared bodies, without replacing
+  the original upstream error if cancellation fails.
+- Extend bundle regression checks to cover the global selector, Kraken UK-only choices and fallback,
+  removed groups, GitHub rule precedence, and `kraken.zendesk.com` routing.
+- Align project, architecture, routing, security, development, and release documentation with the
+  deployed GitHub-bundle architecture and 2026-09-26 release state.
+
+## [Production: simplified selectors and restricted Kraken] - 2026-09-26
+
+### Changed
+
+- Removed the `auto` speed-test selector and separate UK group. The global selector lists live nodes
+  directly; Kraken/Krak offers only UK-labelled nodes, the global selector, and block.
+- Added `kraken.zendesk.com` to the Kraken domain list and placed GitHub routing before Microsoft.
+- Unique node names no longer receive identity suffixes; duplicates and reserved tags still do.
+- Staging and production manifests now reference bundle commit `852233cac5d9781781b7194f53dd7e0fb9692442`.
+
+### Validated
+
+- Five-platform configuration checks and live response shape checks passed. Latest client-device
+  behavior and UK exit IP require separate verification.
+
+## [Production: selectable service policies] - 2026-09-23
+
+### Added
+
+- Added independently selectable AI, YouTube, streaming, Google, Telegram, Apple, Microsoft,
+  ad-blocking, Netflix, Disney+, Spotify, TikTok, GitHub, and Kraken/Krak groups. Each service
+  can follow the global selector or use a specific available node.
+- Enabled client-side `cache_file` selection persistence with a per-subscription/platform cache ID
+  derived without exposing the Subscription ID. Node tags remain stable across upstream reordering.
+- Added pinned DustinWin service rule sets, MetaCubeX global service categories, and a daily
+  DustinWin update workflow designed to propose review PRs without automatic production promotion;
+  its first scheduled run and repository permissions remain unverified.
+
+### Changed
+
+- Microsoft now defaults to direct, Apple to global proxy, ads to block, and Kraken/Krak to UK
+  nodes; unmatched non-China traffic uses `🚀 节点选择` as `route.final`.
+- Updated DNS detours and service-rule precedence while retaining platform TUN behavior.
+
+### Validated
+
+- Passed 141 tests, all five sing-box 1.14.0 configuration checks, Worker dry-run, and pinned
+  rule-set checks. All five production subscriptions returned the new selectors and defaults.
+- Deployment was explicitly authorized without staging device validation. Client-device behavior,
+  selection persistence, and UK exit IP still require real-device checks.
+
+## [Production: previous fixed service routing] - 2026-09-23
+
 ### Added
 
 - Added pinned service rule sets for Apple, Microsoft, Google, YouTube, OpenAI, Netflix, and

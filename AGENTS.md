@@ -16,7 +16,8 @@ The following commands are the project interface:
 - `pnpm lint` / `pnpm format:check`: enforce source and formatting rules.
 - `pnpm typecheck`: run strict TypeScript checks.
 - `pnpm build`: type-check and build the Worker bundle.
-- `pnpm deploy:staging`: deploy before any production release.
+- `pnpm deploy:staging`: deploy the default pre-production environment; production normally
+  promotes a validated staging bundle. Document any explicitly authorized direct-release exception.
 
 ## Coding Style & Naming Conventions
 
@@ -28,7 +29,10 @@ Use Vitest and the Cloudflare Workers test environment. Name tests `*.test.ts`. 
 
 ## Commit & Pull Request Guidelines
 
-The repository has no commit history yet. Use Conventional Commits, for example `docs: clarify DNS generator contract` or `feat(parser): add VLESS reality parsing`. Keep commits focused. Pull requests must explain the change, affected specifications/ADRs, validation performed, and any security impact; link related issues. Include screenshots only for future UI changes.
+Git history uses Conventional Commits, for example `feat(routing): add selectable service policies`
+and `chore(config): promote selectable policies to production`. Keep commits focused. Pull requests
+must explain the change, affected specifications/ADRs, validation performed, and any security
+impact; link related issues. Include screenshots only for future UI changes.
 
 ## Security & Configuration
 

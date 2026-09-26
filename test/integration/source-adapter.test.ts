@@ -90,8 +90,9 @@ describe('3x-ui source adapter', () => {
   });
 
   it('rejects oversized declared and streamed bodies', async () => {
+    const cancel = vi.fn();
     const declared = vi.fn<typeof fetch>().mockResolvedValue(
-      new Response(fakeLink, {
+      new Response(new ReadableStream({ cancel }), {
         headers: { 'Content-Length': String(subscriptionLimits.encodedBytes + 1) },
       }),
     );
@@ -102,9 +103,27 @@ describe('3x-ui source adapter', () => {
     await expect(
       fetchSubscription('https://subscription.example.invalid/mainsub/', 'example-id', declared),
     ).rejects.toMatchObject({ code: 'UPSTREAM_RESPONSE_TOO_LARGE' });
+    expect(cancel).toHaveBeenCalledOnce();
     await expect(
       fetchSubscription('https://subscription.example.invalid/mainsub/', 'example-id', streamed),
     ).rejects.toMatchObject({ code: 'UPSTREAM_RESPONSE_TOO_LARGE' });
+  });
+
+  it('preserves the upstream error when response cancellation fails', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        new ReadableStream({
+          cancel: () => {
+            throw new Error('cancel failed');
+          },
+        }),
+        { status: 503 },
+      ),
+    );
+
+    await expect(
+      fetchSubscription('https://subscription.example.invalid/mainsub/', 'example-id', fetcher),
+    ).rejects.toMatchObject({ code: 'UPSTREAM_ERROR' });
   });
 
   it('drops metadata outside the allowlist and values over the length limit', async () => {

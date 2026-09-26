@@ -1,6 +1,6 @@
 # 项目说明
 
-> 当前 production 使用 GitHub 发布的远程配置包。本次新服务策略组经维护者明确授权直接发布 production；上线后仍须验证。
+> 当前 production 已使用独立可切换服务策略组。五平台线上配置响应已核对；iOS/macOS 实机连通性、选择持久化及英国出口 IP 仍待验证。
 
 ## 项目定位
 
@@ -73,7 +73,7 @@ MVP 只接受：
 - GitHub 发布的公共日志和基础配置。
 - VLESS + REALITY 节点 outbounds。
 - VLESS TCP transport 节点同时承载 TCP 与 UDP，UDP 使用 XUDP 编码。
-- 由远程 outbound policy 实例化的 `selector`、`urltest`、direct 和 block。
+- 由远程 outbound policy 实例化的 `selector`、direct 和 block；全局组直接列出节点。
 - 可在客户端独立切换的 AI、YouTube、流媒体、Google、Telegram、Apple、Microsoft、
   广告拦截等服务策略组，以及 Netflix、Disney+、Spotify、TikTok、GitHub 和 Kraken/Krak。
   Microsoft 默认直连、Apple 默认代理、广告默认拦截、Kraken/Krak 默认英国节点；
@@ -116,6 +116,7 @@ MVP 只接受：
 - sing-box 1.14.0。
 - VLESS + REALITY + TCP/XTLS Vision transport 基线，并支持 TCP/UDP 代理流量。
 - 独立定义的 DNS 与国内外路由策略。
+- 独立服务策略组与客户端本地选择记忆；Worker 不保存选择状态。
 - 不缓存订阅或转换结果。
 - 输入限制、上游安全、日志脱敏和速率限制。
 - 单元测试、集成测试、配置检查和 staging 验证。

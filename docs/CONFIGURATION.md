@@ -65,17 +65,15 @@ example/
 
 `common/`、`dns/`、`platforms/`、`rules/`、`outbounds/` 是人工维护的源文件。
 `published/` 只由 `pnpm config:build` 生成，不得直接编辑。`profiles/*.json` 只声明每个
-平台选择哪些源片段。Phase A 已实现源文件 schema 校验、引用检查、语义检查、确定性构建及
-与旧 Generator 的平台字段回归检查；channel manifest 在 staging 发布阶段生成，仓库不保存虚假
-占位 URL 或摘要。
+平台选择哪些源片段。源文件经过 schema、引用和语义检查，确定性构建后与平台字段及
+服务组不变量对照。staging/production manifest 均已发布，引用真实不可变 bundle。
 
-Phase B 已实现独立的 Remote Config Source：它验证 manifest 与 bundle URL，按流读取并
+Remote Config Source 验证 manifest 与 bundle URL，按流读取并
 限长，拒绝重定向、BOM、重复 JSON 键和未知字段，校验 SHA-256、目标平台、sing-box 版本
-及跨片段引用。Phase D 已将该模块接入订阅请求主链路，但 channel manifest 尚未发布，
-因此尚未执行 staging 部署。
+及跨片段引用。该模块已接入 staging 和 production 订阅请求链路。
 
-Phase C 已实现确定性 Composer：它只读取每个 owner 的固定字段，并在 outbound 插槽中
-加入实时节点、urltest 和 selector tag 数组，不执行通用 deep merge。节点 tag 会避开
+确定性 Composer 只读取每个 owner 的固定字段，并在 outbound 插槽中
+加入实时节点和 selector tag 数组，不执行通用 deep merge。节点 tag 会避开
 bundle 中全部已声明 tag，输入 bundle 与节点保持不变。离线 `config:diff` 已使用该真实
 Composer 对比五个平台的平台字段与服务组不变量。运行时不再回退到旧 Generator。
 
@@ -132,20 +130,19 @@ Bundle 是项目自有 schema，不是假装可以独立运行的 sing-box 配�
 | `dns`             | 完整 `dns` 对象                                            |
 | `platform`        | `inbounds` 与 allowlist 中的 route 平台选项                |
 | `route`           | `http_clients`、`route.rules`、rule-set、final 和 resolver |
-| `outbound_policy` | selector/urltest 参数、地区节点组、固定 tag、节点默认值    |
+| `outbound_policy` | selector 参数、固定 tag、节点默认值与英国节点匹配策略      |
 | Worker            | 由 `CanonicalNode[]` 生成的节点及动态 outbound tag 数组    |
 
 禁止通用 deep merge。每个顶层字段只有一个 owner；平台 route 选项只允许通过显式
 allowlist 合入。数组只能由对应 owner 完整提供，或由 Composer 在已定义的插槽生成。
 未知字段、重复 tag、保留 tag 被节点占用、版本不匹配或引用缺失都必须失败关闭。
 
-`region_selectors` 由 bundle 声明，当前仅支持 `uk`。Worker 依据 3x-ui 节点标签中的
-`🇬🇧`、`英国`、`英國`、独立的 `UK`/`GB`、`United Kingdom` 或 `London` 组成 `uk`
-selector；没有匹配节点时 selector 只包含 `block`。标签是管理员声明，不是出口 IP 的
-地理位置证明；上线前须在实机检查英国出口 IP。
+Kraken/Krak 服务 selector 使用 `uk_node` 选项。Worker 依据 3x-ui 节点标签中的
+`🇬🇧`、`英国`、`英國`、独立的 `UK`/`GB`、`United Kingdom` 或 `London` 直接加入英国节点；没有匹配节点时默认 `block`。不再生成单独 UK 组或 `auto` 组。标签是管理员声明，不是出口 IP 的
+地理位置证明；production 只有 Kraken/Krak 组内的英国候选节点，真实出口 IP 仍须实机核对。
 
 `service_selectors` 定义独立可切换服务组及默认选项；Worker 展开每组的实时节点列表，
-并以节点身份的稳定摘要生成 tag。`common.experimental.cache_file.enabled` 由源片段开启，
+并在重名或保留 tag 冲突时以节点身份摘要消歧。`common.experimental.cache_file.enabled` 由源片段开启，
 Worker 为每个 Subscription ID/平台派生独立 `cache_id`，不将 ID 明文放入配置。
 选择由客户端本地持久化，不进入 Worker 存储。详见 [RULES.md](./RULES.md)。
 
@@ -181,19 +178,22 @@ Subscription ID、节点、请求头和 3x-ui URL绝不发送给 GitHub。GitHub
 
 ## 8. 发布与回滚
 
-1. 修改源片段或 profile。
+1. 修改源片段或 profile；若修改组合语义或 schema，先升级 Worker 并保持旧 bundle 兼容。
 2. CI 校验项目 schema、字段所有权和所有引用。
 3. 使用脱敏 fixture 节点生成五个平台完整配置。
 4. 固定 sing-box 1.14.0 执行 `check`。
 5. 生成 bundle 和 SHA-256，先更新 staging manifest。
 6. 完成实机测试后，通过受保护工作流更新 production manifest。
 
-回滚只需让 channel manifest 重新指向上一个已验证 commit 的 bundle，不部署 Worker。
+纯配置回滚只需让 channel manifest 重新指向上一个已验证 commit 的 bundle；若 Worker
+代码本身有问题，还须回滚 Worker 版本。2026-09-23 选择组发布经维护者明确授权跳过
+staging 实机阶段，先部署向后兼容 Worker、再更新 production manifest；这不是默认流程。
 
 ## 9. 已确定决策
 
 - 配置与 Worker 代码使用当前公开仓库 `JAX1024Dev/Sub-Worker`；`example/` 中不得包含
   节点或订阅 secret。
-- production promotion 必须经过 `configuration-production` 受保护环境人工审批和 PR。
+- 常规 production promotion 必须经过 `configuration-production` 受保护环境人工审批和 PR；
+  明确授权的例外须在 ADR 与发布记录中注明，并做线上配置冒烟验证。
 - 第一阶段接受 GitHub 故障时失败关闭，不引入 KV 或运行时 fallback。
 - 首期依赖分支保护、CODEOWNERS、固定 action commit 和受保护环境；manifest 签名列为增强项。

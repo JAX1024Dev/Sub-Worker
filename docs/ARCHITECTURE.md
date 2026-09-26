@@ -3,14 +3,12 @@
 ## 1. 架构目标
 
 系统采用 Cloudflare Worker 作为无状态数据面，3x-ui 作为节点与订阅授权来源，GitHub
-作为静态配置控制面。重构目标是把 TUN、DNS、路由和平台差异从 TypeScript 中移出，让
+作为静态配置控制面。TUN、DNS、路由和平台差异已从 Worker 运行逻辑移入配置包，让
 兼容 schema 内的配置变化无需部署 Worker，同时保留严格验证、可测试发布和快速回滚。
 
-当前运行链路已接入 Phase B Remote Config Source 与 Phase C 确定性 Composer。请求先
-验证 3x-ui 订阅并解析实时节点，再获取经摘要校验的 GitHub bundle 并组装配置。旧
-Generator 仅用于迁移期 golden diff，不是运行时 fallback；staging 切换仍需先发布有效
-channel manifest。迁移必须保持现有 API、Subscription ID 鉴权、VLESS REALITY 节点
-语义和 no-store 响应不变。
+当前 production 请求先验证 3x-ui 订阅并解析实时节点，再获取经摘要校验的 GitHub
+bundle 并组装配置。旧 Generator 仅用于历史 fixture 对照，不是运行时 fallback。API、
+Subscription ID 鉴权、VLESS REALITY 节点语义和 no-store 响应保持不变。
 
 ## 2. 系统上下文
 
@@ -84,7 +82,7 @@ API Router
 
 ### Remote Config Source
 
-- Phase B 已实现，Phase D 已接入 Worker 请求路径，尚未部署到 staging/production。
+- 已接入 production Worker 请求路径；失败时不会回退到旧 Generator。
 - 从部署变量读取唯一 `SING_BOX_CONFIG_MANIFEST_URL`。
 - manifest 中只按已验证的 clientType 选择 profile。
 - bundle URL 必须属于批准的 GitHub owner/repo/path，且使用完整 commit SHA。
@@ -94,7 +92,7 @@ API Router
 
 ### Sing-box Composer
 
-Phase C 已实现并进入 Worker 请求路径，同时由平台字段回归、服务组不变量和单元测试覆盖。
+确定性 Composer 已进入 Worker 请求路径，同时由平台字段回归、服务组不变量和单元测试覆盖。
 
 Composer 接收：
 
@@ -115,8 +113,11 @@ common
 
 每个字段只有一个 owner。数组不自动拼接，平台只能提供明确允许的 route 字段。
 Composer 必须检测重复 tag、保留 tag 占用、引用缺失、版本不匹配和未消费字段。
-节点 outbound、urltest 和 selector 的动态 tag 数组是唯一运行时插槽；节点 tag 与 bundle
-中所有已声明 tag 冲突时使用稳定序号重命名。Composer 不修改输入 bundle 或节点。
+节点 outbound 和 selector 的动态 tag 数组是唯一运行时插槽；唯一名称直接作为节点 tag，
+重名或保留 tag 冲突时才附加节点身份摘要，再用序号消歧。旧 bundle 的 `urltest` 和 UK 组
+仍可解析，供发布迁移期间兼容；新 bundle 不生成这两组。
+Composer 不修改输入 bundle 或节点。应用层按 Subscription ID 和平台派生 `cache_id`，
+不把 bearer secret 明文放入输出配置。
 
 详细契约见 [CONFIGURATION.md](./CONFIGURATION.md)。
 
@@ -128,15 +129,16 @@ Composer 必须检测重复 tag、保留 tag 占用、引用缺失、版本不�
 - `dns/`：DNS 策略片段。
 - `platforms/`：iOS、macOS、Android、Windows、Linux 特殊配置。
 - `rules/`：路由规则和远程 rule-set。
-- `outbounds/`：节点默认值、selector、urltest、direct 和 block 策略。
+- `outbounds/`：节点默认值、selector、direct 和 block 策略。
 - `profiles/`：每个平台选择哪些片段。
 - `channels/`：staging/production 指针。
 - `published/`：CI 生成的不可变 bundle。
 
-当前 Phase A 已完成 schema、源片段、五平台 bundle 构建与平台字段回归检查。后续 CI
-负责 fixture 组装、sing-box 1.14.0 `check`、摘要生成和 channel
-promotion。production channel 必须经过受保护环境审批。GitHub 是新的生产控制面，因此
-branch protection、最小写权限和审计记录属于系统架构，而不是可选流程。
+已完成 schema、源片段、五平台 bundle 构建与平台字段回归检查。CI 负责 fixture 组装、
+sing-box 1.14.0 `check`、摘要生成和 channel promotion；DustinWin 更新检查设计为只创建待审
+PR，不自动修改 production manifest。仓库已启用 Actions 创建 PR 权限；默认发布流程仍要求审查与环境审批。2026-09-23
+选择组发布是维护者明确批准的直发例外。GitHub 是生产控制面，branch protection、
+最小写权限和审计记录仍须维护。
 
 ## 6. 请求数据流
 
@@ -243,17 +245,19 @@ api → application → domain
 - 新协议或新输出格式需要 parser/renderer 代码和新 bundle schema，必须部署 Worker。
 - schema_version 不兼容变化必须并行支持迁移窗口，不能原地改变语义。
 
-## 11. 迁移边界
+## 11. 当前发布状态与回滚
 
-重构期间保留现有 Generator 作为测试对照，不作为运行时静默 fallback：
+截至 2026-09-26，staging 与 production manifest 均指向 bundle 提交
+`852233cac5d9781781b7194f53dd7e0fb9692442`。该版移除 `auto` 和独立 UK 组，
+Kraken/Krak 仅提供英国标签节点、全局节点选择与 block；无英国节点时默认 block。
+五平台静态配置与线上响应已核对，官方客户端对最新策略的实机回归仍需单独记录。
 
-1. 定义 schema、示例片段和发布工具。
-2. 实现 Remote Config Source。
-3. 实现严格 Composer，并对比当前五平台 golden config。
-4. staging 切换到远程 bundle 并完成实机验证。
-5. production 切换后删除硬编码 Generator。
+配置异常时把 production manifest 指回前一已知正常 bundle；若 Worker schema 或组合
+代码本身异常，再回滚 Worker 部署版本。Worker 与配置变更同发时，应先部署能兼容旧
+bundle 的 Worker，再切换 manifest，避免旧 Worker 读取新 schema。迁移期 Generator
+仅保留为测试参照，不参与运行时回退。
 
-每个阶段必须能独立回滚代码部署；production 切换后，配置回滚只移动 manifest 指针。
+具体版本与验证边界见 [RELEASE.md](./RELEASE.md)。
 
 ## 12. 决策记录
 
@@ -268,3 +272,5 @@ api → application → domain
 - [ADR-0016](./adr/0016-macos-ipv4-dns-compatibility.md)：macOS IPv4 DNS 兼容策略。
 - [ADR-0017](./adr/0017-macos-dual-stack-experiment.md)：macOS FakeIP 双栈试验。
 - [ADR-0018](./adr/0018-github-published-config-bundles.md)：GitHub 不可变配置包。
+- [ADR-0020](./adr/0020-selectable-service-policies.md)：独立可切换服务策略组。
+- [ADR-0021](./adr/0021-simplified-selectors-and-kraken-routing.md)：简化选择组与 Kraken 限定策略。
