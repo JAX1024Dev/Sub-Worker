@@ -1,113 +1,32 @@
 {
-  "http_clients": [
-    {
-      "tag": "rules-via-proxy",
-      "detour": "🚀 节点选择"
-    }
-  ],
+  "http_clients": [{ "tag": "rules-via-proxy", "detour": "🚀 节点选择" }],
   "route": {
     "rules": [
-      {
-        "action": "sniff"
-      },
-      {
-        "protocol": "dns",
-        "action": "hijack-dns"
-      },
-      {
-        "rule_set": "ads",
-        "action": "route",
-        "outbound": "🛑 广告拦截"
-      },
+      { "action": "sniff" },
+      { "protocol": "dns", "action": "hijack-dns" },
+      { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },
       {
         "domain_suffix": ["kraken.com", "krak.app"],
         "action": "route",
         "outbound": "💷 Kraken/Krak"
       },
-      {
-        "rule_set": "ai",
-        "action": "route",
-        "outbound": "🤖 AI"
-      },
-      {
-        "rule_set": "youtube",
-        "action": "route",
-        "outbound": "▶️ YouTube"
-      },
-      {
-        "rule_set": "netflix",
-        "action": "route",
-        "outbound": "🎥 Netflix"
-      },
-      {
-        "rule_set": "disney",
-        "action": "route",
-        "outbound": "📽️ Disney+"
-      },
-      {
-        "rule_set": "spotify",
-        "action": "route",
-        "outbound": "🎵 Spotify"
-      },
-      {
-        "rule_set": "tiktok",
-        "action": "route",
-        "outbound": "🎵 TikTok"
-      },
-      {
-        "rule_set": "media",
-        "action": "route",
-        "outbound": "🎬 流媒体"
-      },
-      {
-        "rule_set": "telegram",
-        "action": "route",
-        "outbound": "✈️ Telegram"
-      },
-      {
-        "rule_set": "apple",
-        "action": "route",
-        "outbound": "🍎 苹果"
-      },
-      {
-        "rule_set": "microsoft-cn",
-        "action": "route",
-        "outbound": "Ⓜ️ 微软"
-      },
-      {
-        "rule_set": "microsoft",
-        "action": "route",
-        "outbound": "Ⓜ️ 微软"
-      },
-      {
-        "rule_set": "github",
-        "action": "route",
-        "outbound": "💻 GitHub"
-      },
-      {
-        "rule_set": "google",
-        "action": "route",
-        "outbound": "🔍 谷歌"
-      },
-      {
-        "rule_set": "geosite-cn",
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "action": "resolve",
-        "strategy": "ipv4_only"
-      },
-      {
-        "ip_is_private": true,
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "rule_set": "geoip-cn",
-        "action": "route",
-        "outbound": "direct"
-      }
+      { "rule_set": "ai", "action": "route", "outbound": "🤖 AI" },
+      { "rule_set": "youtube", "action": "route", "outbound": "▶️ YouTube" },
+      { "rule_set": "netflix", "action": "route", "outbound": "🎥 Netflix" },
+      { "rule_set": "disney", "action": "route", "outbound": "📽️ Disney+" },
+      { "rule_set": "spotify", "action": "route", "outbound": "🎵 Spotify" },
+      { "rule_set": "tiktok", "action": "route", "outbound": "🎵 TikTok" },
+      { "rule_set": "media", "action": "route", "outbound": "🎬 流媒体" },
+      { "rule_set": "telegram", "action": "route", "outbound": "✈️ Telegram" },
+      { "rule_set": "apple", "action": "route", "outbound": "🍎 苹果" },
+      { "rule_set": "microsoft-cn", "action": "route", "outbound": "Ⓜ️ 微软" },
+      { "rule_set": "microsoft", "action": "route", "outbound": "Ⓜ️ 微软" },
+      { "rule_set": "github", "action": "route", "outbound": "💻 GitHub" },
+      { "rule_set": "google", "action": "route", "outbound": "🔍 谷歌" },
+      { "rule_set": "geosite-cn", "action": "route", "outbound": "direct" },
+      { "action": "resolve", "strategy": "ipv4_only" },
+      { "ip_is_private": true, "action": "route", "outbound": "direct" },
+      { "rule_set": "geoip-cn", "action": "route", "outbound": "direct" }
     ],
     "rule_set": [
       {
@@ -128,56 +47,56 @@
         "type": "remote",
         "tag": "ads",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/ads.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/ads.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "ai",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/ai.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/ai.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "youtube",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/youtube.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/youtube.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "media",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/media.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/media.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "netflix",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/netflix.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/netflix.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "disney",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/disney.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/disney.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "spotify",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/spotify.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/spotify.srs",
         "http_client": "rules-via-proxy"
       },
       {
         "type": "remote",
         "tag": "tiktok",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/264c234cdf8daf5cbe671dd981f9886991f0bf73/tiktok.srs",
+        "url": "https://raw.githubusercontent.com/DustinWin/ruleset_geodata/88d9447f48fe73c83af9d7817148975e01ea25a4/tiktok.srs",
         "http_client": "rules-via-proxy"
       },
       {
