@@ -56,7 +56,21 @@ pnpm deploy:production
 
 发布后记录 Cloudflare deployment version，并用不含 secret 的 request ID 验证错误日志。
 
-## 最新发布记录：简化策略组与 Kraken 限定（2026-09-26）
+## 最新发布记录：Tailscale staging（2026-09-28）
+
+- 实现与 bundle 提交 `49612fbd6619d4f58b2f756a57d580acce8940ff`，staging
+  manifest 提交 `d2b4e45`；production manifest 未变更。
+- staging Worker 版本 `c05b7ed0-364b-4460-8551-d63b9e7c7feb`，访问地址为
+  `https://sub-worker-staging.jiahui-wang.workers.dev`。
+- 发布门禁通过 145 项测试、五平台 sing-box 1.14.0 配置检查、Worker dry-run、规则集
+  SHA-256、真实订阅 E2E 和依赖审计。
+- 部署后五个平台订阅均返回 HTTP 200 和 `private, no-store`，包含无内嵌认证密钥的
+  Tailscale endpoint、Tailscale DNS 与最高优先级 Tailscale 路由，并通过官方
+  sing-box 1.14.0 `check`；未知 Subscription ID 返回 HTTP 404。
+- 以上验证覆盖配置生成和静态校验。首次 Tailscale 登录、Tailnet peer 连通性、DNS
+  解析及各平台与现有 Tailscale 客户端的实机冲突仍需客户端验证。
+
+### 历史发布：简化策略组与 Kraken 限定（2026-09-26）
 
 - 实现提交 `34ceb50a5483d8bee7681eea73aeaa5c247cdef9`；Kraken 可选项收紧的 bundle 提交 `852233cac5d9781781b7194f53dd7e0fb9692442`。
 - staging manifest 提交 `c34ea76`，production manifest 提交 `dbfd9ed`；当前五平台均指向同一 bundle 提交。
