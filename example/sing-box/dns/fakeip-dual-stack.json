@@ -1,6 +1,13 @@
 {
   "servers": [
     {
+      "type": "tailscale",
+      "tag": "dns-tailscale",
+      "endpoint": "tailscale",
+      "accept_default_resolvers": false,
+      "accept_search_domain": true
+    },
+    {
       "type": "fakeip",
       "tag": "dns-fakeip",
       "inet4_range": "198.18.0.0/15",
@@ -31,6 +38,11 @@
     }
   ],
   "rules": [
+    {
+      "preferred_by": "dns-tailscale",
+      "action": "route",
+      "server": "dns-tailscale"
+    },
     {
       "query_type": ["A", "AAAA"],
       "action": "route",

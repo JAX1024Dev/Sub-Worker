@@ -53,4 +53,45 @@ describe('remote configuration runtime validator', () => {
       expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
     );
   });
+
+  it('rejects Tailscale secrets and broken endpoint references', () => {
+    const endpoint = iosBundle.fragments.common.endpoints[0];
+    if (endpoint === undefined) throw new Error('Missing Tailscale endpoint');
+    const secretBundle = {
+      ...iosBundle,
+      fragments: {
+        ...iosBundle.fragments,
+        common: {
+          ...iosBundle.fragments.common,
+          endpoints: [{ ...endpoint, auth_key: 'tskey-auth-secret' }],
+        },
+      },
+    };
+    expect(() => parseRemoteConfigBundle(secretBundle, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+
+    const broken = structuredClone(iosBundle);
+    const tailscaleDns = broken.fragments.dns.servers.find((server) => server.type === 'tailscale');
+    if (tailscaleDns === undefined || !('endpoint' in tailscaleDns)) {
+      throw new Error('Missing Tailscale DNS server');
+    }
+    tailscaleDns.endpoint = 'missing-endpoint';
+    expect(() => parseRemoteConfigBundle(broken, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+
+    const wrongPreferredDns = structuredClone(iosBundle);
+    const preferredRule = wrongPreferredDns.fragments.dns.rules.find(
+      (rule) => 'preferred_by' in rule,
+    );
+    if (preferredRule === undefined || !('preferred_by' in preferredRule)) {
+      throw new Error('Missing preferred DNS rule');
+    }
+    preferredRule.preferred_by = 'dns-cn';
+    preferredRule.server = 'dns-cn';
+    expect(() => parseRemoteConfigBundle(wrongPreferredDns, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+  });
 });

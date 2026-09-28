@@ -6,6 +6,7 @@ import type {
   HttpClient,
   RemoteRuleSet,
   RouteRule,
+  TailscaleEndpoint,
   TunInbound,
 } from '../../renderers/sing-box/types';
 import type {
@@ -56,6 +57,17 @@ function isClientType(value: string): value is ClientType {
   );
 }
 
+function isTailscaleEndpoint(value: unknown): value is TailscaleEndpoint {
+  return (
+    isRecord(value) &&
+    hasKeys(value, ['type', 'tag', 'state_directory', 'accept_routes']) &&
+    value.type === 'tailscale' &&
+    isNonEmptyString(value.tag) &&
+    isNonEmptyString(value.state_directory) &&
+    value.accept_routes === true
+  );
+}
+
 function isChannelProfile(value: unknown): value is ChannelProfile {
   return (
     isRecord(value) &&
@@ -93,7 +105,7 @@ export function parseChannelManifest(value: unknown): ChannelManifest {
 function isCommonFragment(value: unknown): value is CommonConfigFragment {
   if (
     !isRecord(value) ||
-    !hasKeys(value, ['$schema', 'log'], ['experimental']) ||
+    !hasKeys(value, ['$schema', 'log'], ['experimental', 'endpoints']) ||
     value.$schema !== 'https://sing-box.sagernet.org/schema.json' ||
     !isRecord(value.log) ||
     !hasKeys(value.log, ['level', 'timestamp']) ||
@@ -103,7 +115,11 @@ function isCommonFragment(value: unknown): value is CommonConfigFragment {
         !hasKeys(value.experimental, ['cache_file']) ||
         !isRecord(value.experimental.cache_file) ||
         !hasKeys(value.experimental.cache_file, ['enabled']) ||
-        value.experimental.cache_file.enabled !== true))
+        value.experimental.cache_file.enabled !== true)) ||
+    (value.endpoints !== undefined &&
+      (!Array.isArray(value.endpoints) ||
+        value.endpoints.length !== 1 ||
+        !value.endpoints.every(isTailscaleEndpoint)))
   ) {
     return false;
   }
@@ -148,12 +164,40 @@ function isFakeIpDnsServer(value: JsonRecord): value is JsonRecord & DnsServer {
   );
 }
 
+function isTailscaleDnsServer(value: JsonRecord): value is JsonRecord & DnsServer {
+  return (
+    hasKeys(value, [
+      'type',
+      'tag',
+      'endpoint',
+      'accept_default_resolvers',
+      'accept_search_domain',
+    ]) &&
+    value.type === 'tailscale' &&
+    isNonEmptyString(value.tag) &&
+    isNonEmptyString(value.endpoint) &&
+    value.accept_default_resolvers === false &&
+    value.accept_search_domain === true
+  );
+}
+
 function isDnsServer(value: unknown): value is DnsServer {
-  return isRecord(value) && (isHttpsDnsServer(value) || isFakeIpDnsServer(value));
+  return (
+    isRecord(value) &&
+    (isHttpsDnsServer(value) || isFakeIpDnsServer(value) || isTailscaleDnsServer(value))
+  );
 }
 
 function isDnsRule(value: unknown): value is DnsRule {
   if (!isRecord(value)) return false;
+  if (
+    hasKeys(value, ['preferred_by', 'action', 'server']) &&
+    isNonEmptyString(value.preferred_by) &&
+    value.action === 'route' &&
+    isNonEmptyString(value.server)
+  ) {
+    return true;
+  }
   if (
     hasKeys(value, ['query_type', 'action', 'no_drop']) &&
     Array.isArray(value.query_type) &&
@@ -266,6 +310,14 @@ function isPlatformFragment(value: unknown): value is PlatformConfigFragment {
 
 function isRouteRule(value: unknown): value is RouteRule {
   if (!isRecord(value)) return false;
+  if (
+    hasKeys(value, ['preferred_by', 'action', 'outbound']) &&
+    isNonEmptyString(value.preferred_by) &&
+    value.action === 'route' &&
+    isNonEmptyString(value.outbound)
+  ) {
+    return true;
+  }
   if (hasKeys(value, ['action']) && value.action === 'sniff') return true;
   if (
     hasKeys(value, ['protocol', 'action']) &&
@@ -444,7 +496,14 @@ function isOutboundPolicy(value: unknown): value is OutboundPolicyFragment {
 }
 
 function validateBundleSemantics(bundle: RemoteConfigBundle): void {
+  const endpoints = bundle.fragments.common.endpoints ?? [];
+  const endpointTags = new Set(endpoints.map((endpoint) => endpoint.tag));
   const dnsTags = new Set(bundle.fragments.dns.servers.map((server) => server.tag));
+  const tailscaleDnsTags = new Set(
+    bundle.fragments.dns.servers
+      .filter((server) => server.type === 'tailscale')
+      .map((server) => server.tag),
+  );
   const inboundTags = new Set(bundle.fragments.platform.inbounds.map((inbound) => inbound.tag));
   const httpClientTags = new Set(bundle.fragments.route.http_clients.map((client) => client.tag));
   const ruleSetTags = new Set(bundle.fragments.route.route.rule_set.map((ruleSet) => ruleSet.tag));
@@ -459,13 +518,16 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
     ...(bundle.fragments.outbound_policy.service_selectors ?? []).map((selector) => selector.tag),
   ];
   const outboundTags: Set<string> = new Set(tags);
+  const routeableTags = new Set([...outboundTags, ...endpointTags]);
 
   if (
+    endpointTags.size !== endpoints.length ||
     dnsTags.size !== bundle.fragments.dns.servers.length ||
     inboundTags.size !== bundle.fragments.platform.inbounds.length ||
     httpClientTags.size !== bundle.fragments.route.http_clients.length ||
     ruleSetTags.size !== bundle.fragments.route.route.rule_set.length ||
     outboundTags.size !== tags.length ||
+    routeableTags.size !== outboundTags.size + endpointTags.size ||
     !inboundTags.has('tun-in') ||
     !dnsTags.has(bundle.fragments.dns.final) ||
     !dnsTags.has(bundle.fragments.route.route.default_domain_resolver) ||
@@ -479,6 +541,9 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
   for (const server of bundle.fragments.dns.servers) {
     if ('detour' in server && !outboundTags.has(server.detour)) {
       throw new ServiceError('CONFIG_SOURCE_INVALID', 'DNS detour reference is invalid.');
+    }
+    if ('endpoint' in server && !endpointTags.has(server.endpoint)) {
+      throw new ServiceError('CONFIG_SOURCE_INVALID', 'DNS endpoint reference is invalid.');
     }
   }
   for (const selector of bundle.fragments.outbound_policy.service_selectors ?? []) {
@@ -496,6 +561,12 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
     if ('rule_set' in rule && !ruleSetTags.has(rule.rule_set)) {
       throw new ServiceError('CONFIG_SOURCE_INVALID', 'DNS rule-set reference is invalid.');
     }
+    if (
+      'preferred_by' in rule &&
+      (rule.preferred_by !== rule.server || !tailscaleDnsTags.has(rule.preferred_by))
+    ) {
+      throw new ServiceError('CONFIG_SOURCE_INVALID', 'DNS preferred server reference is invalid.');
+    }
   }
   for (const client of bundle.fragments.route.http_clients) {
     if (!outboundTags.has(client.detour)) {
@@ -508,11 +579,17 @@ function validateBundleSemantics(bundle: RemoteConfigBundle): void {
     }
   }
   for (const rule of bundle.fragments.route.route.rules) {
-    if ('outbound' in rule && !outboundTags.has(rule.outbound)) {
+    if ('outbound' in rule && !routeableTags.has(rule.outbound)) {
       throw new ServiceError('CONFIG_SOURCE_INVALID', 'Route outbound reference is invalid.');
     }
     if ('rule_set' in rule && !ruleSetTags.has(rule.rule_set)) {
       throw new ServiceError('CONFIG_SOURCE_INVALID', 'Route rule-set reference is invalid.');
+    }
+    if (
+      'preferred_by' in rule &&
+      (!endpointTags.has(rule.preferred_by) || rule.preferred_by !== rule.outbound)
+    ) {
+      throw new ServiceError('CONFIG_SOURCE_INVALID', 'Route preferred endpoint is invalid.');
     }
   }
 

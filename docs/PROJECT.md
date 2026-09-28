@@ -1,6 +1,6 @@
 # 项目说明
 
-> 当前 production 已使用独立可切换服务策略组。五平台线上配置响应已核对；iOS/macOS 实机连通性、选择持久化及英国出口 IP 仍待验证。
+> 当前 production 已使用独立可切换服务策略组。Tailscale endpoint、MagicDNS 和子网路由接收已在源配置与 Worker 组合协议中实现，尚待 staging/production channel 发布及五平台实机验证。
 
 ## 项目定位
 
@@ -79,6 +79,8 @@ MVP 只接受：
   Microsoft 默认直连、Apple 默认代理、广告默认拦截、Kraken/Krak 默认英国节点；
   无英国节点时阻断。其他未匹配中国规则的流量默认代理。
 - 按平台选择的 TUN 和系统集成配置。
+- 内置无密钥的 Tailscale endpoint；客户端本地登录并持久化设备身份，可访问 tailnet peer、
+  MagicDNS 名称和已批准的 subnet route。
 - [DNS 生成规格](./DNS.md)。
 - [路由规则生成规格](./RULES.md)。
 - [远程配置与组合规格](./CONFIGURATION.md)。
@@ -97,6 +99,7 @@ MVP 只接受：
 - 只允许固定 HTTPS 上游，并限制重定向、响应大小和处理时间。
 - Worker 不缓存成功或失败结果，响应使用 `Cache-Control: private, no-store`。
 - 日志不记录完整 URL、Subscription ID 或节点凭据。
+- 配置包和订阅响应不包含 Tailscale auth key；tailnet 登录状态只保存在客户端。
 - 详细要求见 [SECURITY.md](./SECURITY.md)。
 
 ### 可靠性与维护性

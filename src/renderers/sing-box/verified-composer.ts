@@ -6,6 +6,7 @@ import type { SingBoxConfig } from './types';
 
 function collectReservedTags(bundle: RemoteConfigBundle): string[] {
   return [
+    ...(bundle.fragments.common.endpoints ?? []).map((endpoint) => endpoint.tag),
     ...bundle.fragments.dns.servers.map((server) => server.tag),
     ...bundle.fragments.platform.inbounds.map((inbound) => inbound.tag),
     ...bundle.fragments.route.http_clients.map((client) => client.tag),
@@ -82,6 +83,9 @@ export function composeVerifiedSingBoxConfig(
       $schema: bundle.fragments.common.$schema,
       log: bundle.fragments.common.log,
       dns: bundle.fragments.dns,
+      ...(bundle.fragments.common.endpoints === undefined
+        ? {}
+        : { endpoints: bundle.fragments.common.endpoints }),
       http_clients: bundle.fragments.route.http_clients,
       inbounds: bundle.fragments.platform.inbounds,
       outbounds: generated.outbounds,

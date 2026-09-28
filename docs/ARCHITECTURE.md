@@ -104,6 +104,7 @@ CanonicalNode[] + VerifiedProfileBundle
 
 ```text
 common
+  + Tailscale endpoint
   + dns
   + platform inbounds/allowlisted options
   + route
@@ -118,6 +119,9 @@ Composer 必须检测重复 tag、保留 tag 占用、引用缺失、版本不�
 仍可解析，供发布迁移期间兼容；新 bundle 不生成这两组。
 Composer 不修改输入 bundle 或节点。应用层按 Subscription ID 和平台派生 `cache_id`，
 不把 bearer secret 明文放入输出配置。
+Tailscale endpoint 由 common fragment 提供，认证状态只存在客户端；Composer 仅校验 endpoint、
+MagicDNS server 和 `preferred_by` 路由间的 tag 引用。旧 bundle 可不含 endpoint，以支持先部署
+兼容 Worker、再切换 channel 的发布顺序。
 
 详细契约见 [CONFIGURATION.md](./CONFIGURATION.md)。
 
@@ -125,7 +129,7 @@ Composer 不修改输入 bundle 或节点。应用层按 Subscription ID 和平�
 
 人工配置保存在 `example/sing-box/`：
 
-- `common/`：跨平台基础配置。
+- `common/`：跨平台基础配置与无凭据 Tailscale endpoint。
 - `dns/`：DNS 策略片段。
 - `platforms/`：iOS、macOS、Android、Windows、Linux 特殊配置。
 - `rules/`：路由规则和远程 rule-set。
@@ -224,6 +228,8 @@ VerifiedProfileBundle {
 
 - 3x-ui 订阅、CanonicalNode、最终配置和错误响应不缓存。
 - sing-box 客户端本地 `cache_file` 可保存服务 selector 选择与远程规则集；Worker 不读写该状态。
+- Tailscale 设备身份和密钥保存在客户端 endpoint 的 `state_directory`；Worker、GitHub 和 3x-ui
+  均不保存或转发该状态。
 - 首期不使用 Cache API、KV、R2、D1 或 Durable Objects。
 - bundle 的 URL 内容不可变，可由 GitHub CDN 缓存；manifest 是唯一可变指针。
 - GitHub 故障时首期失败关闭，不使用跨请求模块全局变量保存 last-known-good。
@@ -274,3 +280,4 @@ bundle 的 Worker，再切换 manifest，避免旧 Worker 读取新 schema。迁
 - [ADR-0018](./adr/0018-github-published-config-bundles.md)：GitHub 不可变配置包。
 - [ADR-0020](./adr/0020-selectable-service-policies.md)：独立可切换服务策略组。
 - [ADR-0021](./adr/0021-simplified-selectors-and-kraken-routing.md)：简化选择组与 Kraken 限定策略。
+- [ADR-0022](./adr/0022-tailscale-endpoint.md)：客户端本地 Tailscale endpoint、MagicDNS 与路由优先级。

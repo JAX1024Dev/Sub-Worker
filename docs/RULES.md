@@ -24,13 +24,15 @@
 
 ## 规则优先级
 
-1. `sniff` 和 `hijack-dns`。
-2. 广告集；Kraken/Krak 域名。
-3. AI、YouTube、Netflix、Disney+、Spotify、TikTok、通用流媒体。细分类必须先于通用分类。
-4. Telegram、Apple、GitHub、Microsoft（含 `microsoft@cn`）、Google。GitHub 先于 Microsoft，解决上游两个规则集重叠时 GitHub 误入默认直连的微软组。服务规则必须先于中国通用规则。
-5. `geosite-cn → direct`。
-6. `resolve`；macOS IPv4 兼容片段使用 `ipv4_only`。解析后的私网 IP 和 `geoip-cn` 直连。
-7. 余下所有流量进入 `🚀 节点选择`。
+1. `preferred_by = tailscale` 匹配 MagicDNS 名称、tailnet peer IP 和已批准的 subnet route，
+   直接交给 `tailscale` endpoint。该规则置于 `sniff` 之前，避免嗅探结果改变 IP 字面量判断。
+2. `sniff` 和 `hijack-dns`。
+3. 广告集；Kraken/Krak 域名。
+4. AI、YouTube、Netflix、Disney+、Spotify、TikTok、通用流媒体。细分类必须先于通用分类。
+5. Telegram、Apple、GitHub、Microsoft（含 `microsoft@cn`）、Google。GitHub 先于 Microsoft，解决上游两个规则集重叠时 GitHub 误入默认直连的微软组。服务规则必须先于中国通用规则。
+6. `geosite-cn → direct`。
+7. `resolve`；macOS IPv4 兼容片段使用 `ipv4_only`。解析后的普通私网 IP 和 `geoip-cn` 直连。
+8. 余下所有流量进入 `🚀 节点选择`。
 
 不再引入 `geosite-non-cn`：海外兜底直接由 `final` 决定。iOS 双栈与 macOS IPv4 兼容的 TUN/地址族差异由各自平台和 DNS 片段保留，不因服务策略组改变。避免按临时 App 端口/IP 添加规则。
 

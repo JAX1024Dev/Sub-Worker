@@ -27,6 +27,31 @@ describe('verified sing-box composer', () => {
       expect(config.outbounds.some((outbound) => outbound.tag === 'uk')).toBe(false);
       expect(config.outbounds.some((outbound) => outbound.type === 'urltest')).toBe(false);
       expect(config.route.final).toBe('🚀 节点选择');
+      expect(config.endpoints).toEqual([
+        {
+          type: 'tailscale',
+          tag: 'tailscale',
+          state_directory: 'tailscale',
+          accept_routes: true,
+        },
+      ]);
+      expect(config.dns.servers).toContainEqual({
+        type: 'tailscale',
+        tag: 'dns-tailscale',
+        endpoint: 'tailscale',
+        accept_default_resolvers: false,
+        accept_search_domain: true,
+      });
+      expect(config.dns.rules[0]).toEqual({
+        preferred_by: 'dns-tailscale',
+        action: 'route',
+        server: 'dns-tailscale',
+      });
+      expect(config.route.rules[0]).toEqual({
+        preferred_by: 'tailscale',
+        action: 'route',
+        outbound: 'tailscale',
+      });
       expect(config.experimental?.cache_file).toEqual({ enabled: true, cache_id: 'test-cache' });
       expect(config.route.rules).toContainEqual({
         domain_suffix: ['kraken.com', 'krak.app', 'kraken.zendesk.com'],
@@ -125,6 +150,44 @@ describe('verified sing-box composer', () => {
     expect(config.outbounds.find((outbound) => outbound.tag === 'uk')).toMatchObject({
       type: 'selector',
     });
+  });
+
+  it('keeps pre-Tailscale bundles readable during a staged release', () => {
+    const legacyCommon = {
+      $schema: iosBundleSource.fragments.common.$schema,
+      log: iosBundleSource.fragments.common.log,
+      experimental: iosBundleSource.fragments.common.experimental,
+    };
+    const source = {
+      ...iosBundleSource,
+      fragments: {
+        ...iosBundleSource.fragments,
+        common: legacyCommon,
+        dns: {
+          ...iosBundleSource.fragments.dns,
+          servers: iosBundleSource.fragments.dns.servers.filter(
+            (server) => server.type !== 'tailscale',
+          ),
+          rules: iosBundleSource.fragments.dns.rules.filter((rule) => !('preferred_by' in rule)),
+        },
+        route: {
+          ...iosBundleSource.fragments.route,
+          route: {
+            ...iosBundleSource.fragments.route.route,
+            rules: iosBundleSource.fragments.route.route.rules.filter(
+              (rule) => !('preferred_by' in rule),
+            ),
+          },
+        },
+      },
+    };
+
+    const config = composeVerifiedSingBoxConfig(
+      [fakeCanonicalNode],
+      parseRemoteConfigBundle(source, 'ios'),
+    );
+
+    expect(config.endpoints).toBeUndefined();
   });
 
   it('uses bundle-owned logging and outbound policy values', () => {

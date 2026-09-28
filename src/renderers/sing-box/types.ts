@@ -5,11 +5,19 @@ export interface SingBoxConfig {
     timestamp: boolean;
   };
   dns: DnsConfig;
+  endpoints?: TailscaleEndpoint[];
   http_clients: HttpClient[];
   inbounds: TunInbound[];
   outbounds: Outbound[];
   route: RouteConfig;
   experimental?: { cache_file: { enabled: true; cache_id?: string } };
+}
+
+export interface TailscaleEndpoint {
+  type: 'tailscale';
+  tag: string;
+  state_directory: string;
+  accept_routes: true;
 }
 
 export interface DnsConfig {
@@ -42,9 +50,18 @@ export interface FakeIpDnsServer {
   inet6_range: string;
 }
 
-export type DnsServer = HttpsDnsServer | FakeIpDnsServer;
+export interface TailscaleDnsServer {
+  type: 'tailscale';
+  tag: string;
+  endpoint: string;
+  accept_default_resolvers: false;
+  accept_search_domain: true;
+}
+
+export type DnsServer = HttpsDnsServer | FakeIpDnsServer | TailscaleDnsServer;
 
 export type DnsRule =
+  | { preferred_by: string; action: 'route'; server: string }
   | { query_type: ['AAAA']; action: 'reject'; no_drop: true }
   | { query_type: ['A', 'AAAA']; action: 'route'; server: string }
   | { rule_set: string; action: 'route'; server: string }
@@ -107,6 +124,7 @@ export interface VlessOutbound {
 }
 
 export type RouteRule =
+  | { preferred_by: string; action: 'route'; outbound: string }
   | { action: 'sniff' }
   | { protocol: 'dns'; action: 'hijack-dns' }
   | { ip_is_private: true; action: 'route'; outbound: string }

@@ -1,6 +1,13 @@
 {
   "servers": [
     {
+      "type": "tailscale",
+      "tag": "dns-tailscale",
+      "endpoint": "tailscale",
+      "accept_default_resolvers": false,
+      "accept_search_domain": true
+    },
+    {
       "type": "https",
       "tag": "dns-cn",
       "server": "223.5.5.5",
@@ -25,6 +32,11 @@
     }
   ],
   "rules": [
+    {
+      "preferred_by": "dns-tailscale",
+      "action": "route",
+      "server": "dns-tailscale"
+    },
     {
       "rule_set": "apple",
       "action": "route",

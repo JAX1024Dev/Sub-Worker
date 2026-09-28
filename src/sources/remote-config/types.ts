@@ -4,6 +4,7 @@ import type {
   RemoteRuleSet,
   RouteConfig,
   RouteRule,
+  TailscaleEndpoint,
   TunInbound,
 } from '../../renderers/sing-box/types';
 import type { ClientType } from '../../domain/canonical-node';
@@ -26,6 +27,7 @@ export interface CommonConfigFragment {
     timestamp: boolean;
   };
   experimental?: { cache_file: { enabled: true } };
+  endpoints?: TailscaleEndpoint[];
 }
 
 export interface PlatformConfigFragment {

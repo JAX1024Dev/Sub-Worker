@@ -54,6 +54,8 @@ Subscription ID 位于 URL 路径，可能进入客户端记录、浏览器历�
 - 错误监控不附带请求路径、请求正文、上游正文或生成配置。
 - GitHub manifest 和 bundle 必须是公开且不含 Subscription ID、节点、token 或其他
   secret 的静态文件。
+- 公开 bundle 只能声明无凭据的 Tailscale endpoint，不得包含 `auth_key`、设备私钥或其他
+  tailnet 凭据。首次登录和状态持久化由客户端完成，Worker 与 GitHub 均不得接收该状态。
 
 ## 5. 请求验证
 

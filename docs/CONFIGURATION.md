@@ -126,18 +126,23 @@ Bundle 是项目自有 schema，不是假装可以独立运行的 sing-box 配�
 }
 ```
 
-| 组成              | 唯一负责内容                                               |
-| ----------------- | ---------------------------------------------------------- |
-| `common`          | `$schema`、`log` 等无平台差异的顶层字段                    |
-| `dns`             | 完整 `dns` 对象                                            |
-| `platform`        | `inbounds` 与 allowlist 中的 route 平台选项                |
-| `route`           | `http_clients`、`route.rules`、rule-set、final 和 resolver |
-| `outbound_policy` | selector 参数、固定 tag、节点默认值与英国节点匹配策略      |
-| Worker            | 由 `CanonicalNode[]` 生成的节点及动态 outbound tag 数组    |
+| 组成              | 唯一负责内容                                                 |
+| ----------------- | ------------------------------------------------------------ |
+| `common`          | `$schema`、`log`、Tailscale endpoints 等无平台差异的顶层字段 |
+| `dns`             | 完整 `dns` 对象                                              |
+| `platform`        | `inbounds` 与 allowlist 中的 route 平台选项                  |
+| `route`           | `http_clients`、`route.rules`、rule-set、final 和 resolver   |
+| `outbound_policy` | selector 参数、固定 tag、节点默认值与英国节点匹配策略        |
+| Worker            | 由 `CanonicalNode[]` 生成的节点及动态 outbound tag 数组      |
 
 禁止通用 deep merge。每个顶层字段只有一个 owner；平台 route 选项只允许通过显式
 allowlist 合入。数组只能由对应 owner 完整提供，或由 Composer 在已定义的插槽生成。
 未知字段、重复 tag、保留 tag 被节点占用、版本不匹配或引用缺失都必须失败关闭。
+
+`common.endpoints` 只允许不含凭据的 Tailscale endpoint。当前固定 tag 为 `tailscale`，
+启用客户端状态目录和 `accept_routes`；`auth_key`、自定义 control URL、exit node、路由发布、
+SSH server 和 Taildrop 均不属于公开 bundle。旧 bundle 可以没有 `endpoints`，供 Worker 先行
+部署；新源配置构建必须包含该 endpoint。
 
 Kraken/Krak 服务 selector 使用 `uk_node` 选项。Worker 依据 3x-ui 节点标签中的
 `🇬🇧`、`英国`、`英國`、独立的 `UK`/`GB`、`United Kingdom` 或 `London` 直接加入英国节点；没有匹配节点时默认 `block`。不再生成单独 UK 组或 `auto` 组。标签是管理员声明，不是出口 IP 的

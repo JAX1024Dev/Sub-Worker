@@ -4,5 +4,13 @@
     "level": "error",
     "timestamp": true
   },
+  "endpoints": [
+    {
+      "type": "tailscale",
+      "tag": "tailscale",
+      "state_directory": "tailscale",
+      "accept_routes": true
+    }
+  ],
   "experimental": { "cache_file": { "enabled": true } }
 }

@@ -31,13 +31,20 @@ interface TaggedValue {
   tag: string;
 }
 
+interface TailscaleEndpoint extends TaggedValue {
+  type: 'tailscale';
+  state_directory: string;
+  accept_routes: true;
+}
+
 interface DnsRule {
+  preferred_by?: string;
   rule_set?: string;
   server?: string;
 }
 
 interface DnsFragment {
-  servers: Array<TaggedValue & { detour?: string }>;
+  servers: Array<TaggedValue & { type?: string; detour?: string; endpoint?: string }>;
   rules: DnsRule[];
   final: string;
   strategy: string;
@@ -53,6 +60,7 @@ interface PlatformFragment {
 
 interface RouteRule {
   outbound?: string;
+  preferred_by?: string;
   rule_set?: string;
 }
 
@@ -83,6 +91,7 @@ interface OutboundPolicyFragment {
 interface CommonFragment {
   $schema: string;
   log: Record<string, unknown>;
+  endpoints: TailscaleEndpoint[];
 }
 
 export interface ConfigBundle {
@@ -230,8 +239,12 @@ function requireTag(tags: Set<string>, tag: string, context: string): void {
 }
 
 function validateSemantics(bundle: ConfigBundle): void {
-  const { dns, platform, route, outbound_policy: outboundPolicy } = bundle.fragments;
+  const { common, dns, platform, route, outbound_policy: outboundPolicy } = bundle.fragments;
+  const endpointTags = assertUniqueTags(common.endpoints, 'Endpoints');
   const dnsTags = assertUniqueTags(dns.servers, 'DNS servers');
+  const tailscaleDnsTags = new Set(
+    dns.servers.filter((server) => server.type === 'tailscale').map((server) => server.tag),
+  );
   const inboundTags = assertUniqueTags(platform.inbounds, 'Platform inbounds');
   const httpClientTags = assertUniqueTags(route.http_clients, 'HTTP clients');
   const ruleSetTags = assertUniqueTags(route.route.rule_set, 'Route rule sets');
@@ -246,6 +259,10 @@ function validateSemantics(bundle: ConfigBundle): void {
     ],
     'Fixed outbounds',
   );
+  const routeableTags = new Set([...outboundTags, ...endpointTags]);
+  if (routeableTags.size !== outboundTags.size + endpointTags.size) {
+    throw new Error('Endpoint and outbound tags must be unique.');
+  }
 
   for (const required of [outboundPolicy.selector.tag, 'direct', 'block']) {
     requireTag(outboundTags, required, 'Outbound policy');
@@ -275,10 +292,19 @@ function validateSemantics(bundle: ConfigBundle): void {
     if (server.detour !== undefined) {
       requireTag(outboundTags, server.detour, `DNS server ${server.tag}`);
     }
+    if (server.endpoint !== undefined) {
+      requireTag(endpointTags, server.endpoint, `DNS server ${server.tag}`);
+    }
   }
   for (const rule of dns.rules) {
     if (rule.server !== undefined) requireTag(dnsTags, rule.server, 'DNS rule');
     if (rule.rule_set !== undefined) requireTag(ruleSetTags, rule.rule_set, 'DNS rule');
+    if (
+      rule.preferred_by !== undefined &&
+      (rule.preferred_by !== rule.server || !tailscaleDnsTags.has(rule.preferred_by))
+    ) {
+      throw new Error('DNS preferred_by must reference its selected DNS server.');
+    }
   }
   for (const client of route.http_clients) {
     requireTag(outboundTags, client.detour, `HTTP client ${client.tag}`);
@@ -291,8 +317,14 @@ function validateSemantics(bundle: ConfigBundle): void {
     }
   }
   for (const rule of route.route.rules) {
-    if (rule.outbound !== undefined) requireTag(outboundTags, rule.outbound, 'Route rule');
+    if (rule.outbound !== undefined) requireTag(routeableTags, rule.outbound, 'Route rule');
     if (rule.rule_set !== undefined) requireTag(ruleSetTags, rule.rule_set, 'Route rule');
+    if (
+      rule.preferred_by !== undefined &&
+      (!endpointTags.has(rule.preferred_by) || rule.preferred_by !== rule.outbound)
+    ) {
+      throw new Error('Route preferred_by must reference its selected endpoint.');
+    }
   }
 
   const routeOptions = Object.keys(platform.route);

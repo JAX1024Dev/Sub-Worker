@@ -22,7 +22,7 @@ describe('configured 3x-ui subscription', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(config).toMatchObject({
       dns: { final: 'dns-global', strategy: 'prefer_ipv4' },
-      route: { final: 'proxy', auto_detect_interface: true },
+      route: { final: '🚀 节点选择', auto_detect_interface: true },
     });
 
     if (
@@ -43,7 +43,7 @@ describe('configured 3x-ui subscription', () => {
     );
     expect(config.route.rules).toContainEqual({ action: 'resolve' });
     expect(config.route.rules).not.toContainEqual(
-      expect.objectContaining({ ip_version: 6, outbound: 'proxy' }),
+      expect.objectContaining({ ip_version: 6, outbound: '🚀 节点选择' }),
     );
     expect(config.inbounds[0]).toMatchObject({
       type: 'tun',

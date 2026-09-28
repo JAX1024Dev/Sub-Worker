@@ -2,6 +2,7 @@
   "http_clients": [{ "tag": "rules-via-proxy", "detour": "🚀 节点选择" }],
   "route": {
     "rules": [
+      { "preferred_by": "tailscale", "action": "route", "outbound": "tailscale" },
       { "action": "sniff" },
       { "protocol": "dns", "action": "hijack-dns" },
       { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },

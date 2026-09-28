@@ -9,10 +9,25 @@
     "common": {
       "$schema": "https://sing-box.sagernet.org/schema.json",
       "log": { "level": "error", "timestamp": true },
+      "endpoints": [
+        {
+          "type": "tailscale",
+          "tag": "tailscale",
+          "state_directory": "tailscale",
+          "accept_routes": true
+        }
+      ],
       "experimental": { "cache_file": { "enabled": true } }
     },
     "dns": {
       "servers": [
+        {
+          "type": "tailscale",
+          "tag": "dns-tailscale",
+          "endpoint": "tailscale",
+          "accept_default_resolvers": false,
+          "accept_search_domain": true
+        },
         {
           "type": "https",
           "tag": "dns-cn",
@@ -32,6 +47,11 @@
         }
       ],
       "rules": [
+        {
+          "preferred_by": "dns-tailscale",
+          "action": "route",
+          "server": "dns-tailscale"
+        },
         { "rule_set": "apple", "action": "route", "server": "dns-global" },
         { "rule_set": "microsoft", "action": "route", "server": "dns-cn" },
         { "rule_set": "geosite-cn", "action": "route", "server": "dns-cn" },
@@ -62,6 +82,11 @@
       "http_clients": [{ "tag": "rules-via-proxy", "detour": "🚀 节点选择" }],
       "route": {
         "rules": [
+          {
+            "preferred_by": "tailscale",
+            "action": "route",
+            "outbound": "tailscale"
+          },
           { "action": "sniff" },
           { "protocol": "dns", "action": "hijack-dns" },
           { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },
