@@ -280,4 +280,5 @@ bundle 的 Worker，再切换 manifest，避免旧 Worker 读取新 schema。迁
 - [ADR-0018](./adr/0018-github-published-config-bundles.md)：GitHub 不可变配置包。
 - [ADR-0020](./adr/0020-selectable-service-policies.md)：独立可切换服务策略组。
 - [ADR-0021](./adr/0021-simplified-selectors-and-kraken-routing.md)：简化选择组与 Kraken 限定策略。
+- [ADR-0023](./adr/0023-apple-default-direct.md)：Apple 策略组默认直连。
 - [ADR-0022](./adr/0022-tailscale-endpoint.md)：客户端本地 Tailscale endpoint、MagicDNS 与路由优先级。

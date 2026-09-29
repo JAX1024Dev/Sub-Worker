@@ -13,8 +13,8 @@ DNS 片段位于 `example/sing-box/dns/`，由平台 profile 选择。本文描�
 普通 split-DoH 规则先以 `preferred_by = dns-tailscale` 把 MagicDNS 与 tailnet DNS 路由交给
 `dns-tailscale`。随后需要兼容的 IPv4-only profile 拒绝普通 AAAA；Apple → `dns-global`、
 Microsoft → `dns-cn`、`geosite-cn` → `dns-cn`，其余 → `dns-global`。Microsoft 改选代理节点时
-DNS 仍由 `dns-cn` 解析；服务组选择控制连接出口，不动态更改 DNS 上游。Apple 改选 direct
-时同理，DNS 仍走 `dns-global`。这是当前配置层的明确限制，未来若要求 DNS 与组选择完全联动须另行设计。
+DNS 仍由 `dns-cn` 解析；服务组选择控制连接出口，不动态更改 DNS 上游。Apple 默认 direct，
+但 DNS 仍走 `dns-global`；改选代理时也不改变 DNS 上游。这是当前配置层的明确限制，未来若要求 DNS 与组选择完全联动须另行设计。
 
 macOS FakeIP 双栈先用 `dns-fakeip` 回答应用的 A/AAAA 请求，内部真实解析由 direct/route resolver 完成。macOS IPv4 兼容 profile 使用 `ipv4_only` 且拒绝 AAAA；其他已发布 profile 使用 `prefer_ipv4`。iOS 双栈保留 TUN 内 IPv4/IPv6 路由。各平台 `dns.timeout = 5s`、`disable_cache = false`、`optimistic = false`。
 

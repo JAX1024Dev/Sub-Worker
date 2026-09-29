@@ -62,7 +62,8 @@ describe('verified sing-box composer', () => {
         default: 'direct',
       });
       expect(config.outbounds.find((outbound) => outbound.tag === '🍎 苹果')).toMatchObject({
-        default: '🚀 节点选择',
+        default: 'direct',
+        outbounds: ['direct', '🚀 节点选择', 'Example node'],
       });
       expect(config.outbounds.find((outbound) => outbound.tag === '🛑 广告拦截')).toMatchObject({
         default: 'block',
