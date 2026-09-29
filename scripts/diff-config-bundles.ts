@@ -59,6 +59,7 @@ for (const [clientType, bundle] of bundles) {
   }
 
   const global = current.outbounds.find((outbound) => outbound.tag === '🚀 节点选择');
+  const apple = current.outbounds.find((outbound) => outbound.tag === '🍎 苹果');
   const krakenWithoutUk = current.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
   const krakenWithUk = withUkNode.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
   const routeIndex = (tag: string) =>
@@ -71,6 +72,9 @@ for (const [clientType, bundle] of bundles) {
     global?.type !== 'selector' ||
     !isDeepStrictEqual(global.outbounds, ['Example node']) ||
     global.default !== 'Example node' ||
+    apple?.type !== 'selector' ||
+    apple.default !== 'direct' ||
+    !isDeepStrictEqual(apple.outbounds, ['direct', '🚀 节点选择', 'Example node']) ||
     krakenWithoutUk?.type !== 'selector' ||
     !isDeepStrictEqual(krakenWithoutUk.outbounds, ['block', '🚀 节点选择']) ||
     krakenWithoutUk.default !== 'block' ||

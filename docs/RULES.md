@@ -13,7 +13,7 @@
 | 🎬 流媒体                                        | 🚀 节点选择          | DustinWin `media`                                   |
 | 🔍 谷歌                                          | 🚀 节点选择          | MetaCubeX `google`                                  |
 | ✈️ Telegram                                      | 🚀 节点选择          | MetaCubeX `telegram`                                |
-| 🍎 苹果                                          | 🚀 节点选择          | MetaCubeX `apple`                                   |
+| 🍎 苹果                                          | direct               | MetaCubeX `apple`                                   |
 | Ⓜ️ 微软                                          | direct               | MetaCubeX `microsoft`、`microsoft@cn`               |
 | 🛑 广告拦截                                      | block                | DustinWin `ads`                                     |
 | 🎥 Netflix / 📽️ Disney+ / 🎵 Spotify / 🎵 TikTok | 🚀 节点选择          | DustinWin 对应分类                                  |

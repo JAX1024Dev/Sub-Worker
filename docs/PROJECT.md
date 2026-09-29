@@ -76,7 +76,7 @@ MVP 只接受：
 - 由远程 outbound policy 实例化的 `selector`、direct 和 block；全局组直接列出节点。
 - 可在客户端独立切换的 AI、YouTube、流媒体、Google、Telegram、Apple、Microsoft、
   广告拦截等服务策略组，以及 Netflix、Disney+、Spotify、TikTok、GitHub 和 Kraken/Krak。
-  Microsoft 默认直连、Apple 默认代理、广告默认拦截、Kraken/Krak 默认英国节点；
+  Microsoft 和 Apple 默认直连、广告默认拦截、Kraken/Krak 默认英国节点；
   无英国节点时阻断。其他未匹配中国规则的流量默认代理。
 - 按平台选择的 TUN 和系统集成配置。
 - 内置无密钥的 Tailscale endpoint；客户端本地登录并持久化设备身份，可访问 tailnet peer、

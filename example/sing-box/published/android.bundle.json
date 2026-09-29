@@ -295,8 +295,8 @@
         {
           "type": "selector",
           "tag": "🍎 苹果",
-          "default": "global",
-          "choices": ["global", "nodes", "direct"]
+          "default": "direct",
+          "choices": ["direct", "global", "nodes"]
         },
         {
           "type": "selector",
