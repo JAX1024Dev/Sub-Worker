@@ -56,7 +56,20 @@ pnpm deploy:production
 
 发布后记录 Cloudflare deployment version，并用不含 secret 的 request ID 验证错误日志。
 
-## 最新发布记录：Tailscale staging（2026-09-28）
+## 最新发布记录：SSH 策略组 staging（2026-10-01）
+
+- 实现与 bundle 提交 `018f32ddc9620fc295f168a491d13c04704c44fe`，staging manifest
+  提交 `055837e`；production manifest 未变更。
+- staging Worker 版本 `20882c05-89ff-49ad-885b-85f5b7d9c92a`。
+- 单元测试、集成测试和五平台生成 bundle 的 sing-box 1.14.0 检查通过。线上五平台订阅
+  均返回 HTTP 200、`private, no-store`，包含默认 `direct`、可选全局组与具体节点的
+  `🔐 SSH` selector，以及在服务规则前的 SSH 协议路由。iOS、macOS、Android、Windows
+  的线上返回配置通过本机 sing-box 1.14.0 检查；Linux 配置在 macOS 上初始化
+  `auto-redirect` 时报 `invalid argument`，仍需 Linux 环境及客户端连通性验证。
+- GitHub CI 的配置与构建步骤通过，依赖审计步骤因现有 lockfile 中的高危依赖公告失败；
+  该依赖问题需单独处理。
+
+### 历史发布：Tailscale staging（2026-09-28）
 
 - 实现与 bundle 提交 `49612fbd6619d4f58b2f756a57d580acce8940ff`，staging
   manifest 提交 `d2b4e45`；production manifest 未变更。
