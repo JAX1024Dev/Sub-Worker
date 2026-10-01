@@ -284,6 +284,16 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "required": ["protocol", "action", "outbound"],
+          "properties": {
+            "protocol": { "const": "ssh" },
+            "action": { "const": "route" },
+            "outbound": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "required": ["ip_is_private", "action", "outbound"],
           "properties": {
             "ip_is_private": { "const": true },

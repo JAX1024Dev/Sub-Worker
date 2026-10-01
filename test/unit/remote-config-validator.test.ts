@@ -30,6 +30,30 @@ describe('remote configuration runtime validator', () => {
     );
   });
 
+  it('accepts only the SSH protocol route and a declared selector', () => {
+    const wrongProtocol = structuredClone(iosBundle);
+    const sshRule = wrongProtocol.fragments.route.route.rules.find(
+      (rule) => 'protocol' in rule && rule.protocol === 'ssh',
+    );
+    if (sshRule === undefined || !('protocol' in sshRule)) throw new Error('Missing SSH rule');
+    sshRule.protocol = 'http';
+    expect(() => parseRemoteConfigBundle(wrongProtocol, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+
+    const missingSelector = structuredClone(iosBundle);
+    const missingSelectorRule = missingSelector.fragments.route.route.rules.find(
+      (rule) => 'protocol' in rule && rule.protocol === 'ssh',
+    );
+    if (missingSelectorRule === undefined || !('outbound' in missingSelectorRule)) {
+      throw new Error('Missing SSH rule');
+    }
+    missingSelectorRule.outbound = 'missing-ssh-selector';
+    expect(() => parseRemoteConfigBundle(missingSelector, 'ios')).toThrow(
+      expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),
+    );
+  });
+
   it('rejects a bundle for a different client type', () => {
     expect(() => parseRemoteConfigBundle(iosBundle, 'macos')).toThrow(
       expect.objectContaining({ code: 'CONFIG_SOURCE_INVALID' }),

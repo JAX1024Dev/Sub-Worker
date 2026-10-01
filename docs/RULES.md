@@ -8,6 +8,7 @@
 
 | 组                                               | 默认                 | 规则集                                              |
 | ------------------------------------------------ | -------------------- | --------------------------------------------------- |
+| 🔐 SSH                                           | direct               | 嗅探协议 `ssh`，仅 TCP                              |
 | 🤖 AI                                            | 🚀 节点选择          | DustinWin `ai`                                      |
 | ▶️ YouTube                                       | 🚀 节点选择          | DustinWin `youtube`                                 |
 | 🎬 流媒体                                        | 🚀 节点选择          | DustinWin `media`                                   |
@@ -27,14 +28,16 @@
 1. `preferred_by = tailscale` 匹配 MagicDNS 名称、tailnet peer IP 和已批准的 subnet route，
    直接交给 `tailscale` endpoint。该规则置于 `sniff` 之前，避免嗅探结果改变 IP 字面量判断。
 2. `sniff` 和 `hijack-dns`。
-3. 广告集；Kraken/Krak 域名。
-4. AI、YouTube、Netflix、Disney+、Spotify、TikTok、通用流媒体。细分类必须先于通用分类。
-5. Telegram、Apple、GitHub、Microsoft（含 `microsoft@cn`）、Google。GitHub 先于 Microsoft，解决上游两个规则集重叠时 GitHub 误入默认直连的微软组。服务规则必须先于中国通用规则。
-6. `geosite-cn → direct`。
-7. `resolve`；macOS IPv4 兼容片段使用 `ipv4_only`。解析后的普通私网 IP 和 `geoip-cn` 直连。
-8. 余下所有流量进入 `🚀 节点选择`。
+3. 嗅探到 `ssh` 的 TCP 连接进入 `🔐 SSH`；默认直连，可改选全局组或具体节点。
+4. 广告集；Kraken/Krak 域名。
+5. AI、YouTube、Netflix、Disney+、Spotify、TikTok、通用流媒体。细分类必须先于通用分类。
+6. Telegram、Apple、GitHub、Microsoft（含 `microsoft@cn`）、Google。GitHub 先于 Microsoft，解决上游两个规则集重叠时 GitHub 误入默认直连的微软组。服务规则必须先于中国通用规则。
+7. `geosite-cn → direct`。
+8. `resolve`；macOS IPv4 兼容片段使用 `ipv4_only`。解析后的普通私网 IP 和 `geoip-cn` 直连。
+9. 余下所有流量进入 `🚀 节点选择`。
 
 不再引入 `geosite-non-cn`：海外兜底直接由 `final` 决定。iOS 双栈与 macOS IPv4 兼容的 TUN/地址族差异由各自平台和 DNS 片段保留，不因服务策略组改变。避免按临时 App 端口/IP 添加规则。
+SSH 匹配依赖协议嗅探，不按目的端口 22 判断；未识别、加密封装或嗅探超时的连接继续匹配后续路由规则。Tailscale 优先规则仍先于 SSH 规则。
 
 ## 规则集来源与更新
 

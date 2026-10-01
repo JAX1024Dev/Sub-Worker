@@ -90,6 +90,7 @@
           },
           { "action": "sniff" },
           { "protocol": "dns", "action": "hijack-dns" },
+          { "protocol": "ssh", "action": "route", "outbound": "🔐 SSH" },
           { "rule_set": "ads", "action": "route", "outbound": "🛑 广告拦截" },
           {
             "domain_suffix": ["kraken.com", "krak.app", "kraken.zendesk.com"],
@@ -264,6 +265,12 @@
         "default": "first_node"
       },
       "service_selectors": [
+        {
+          "type": "selector",
+          "tag": "🔐 SSH",
+          "default": "direct",
+          "choices": ["direct", "global", "nodes"]
+        },
         {
           "type": "selector",
           "tag": "🤖 AI",

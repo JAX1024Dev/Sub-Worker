@@ -127,6 +127,7 @@ export type RouteRule =
   | { preferred_by: string; action: 'route'; outbound: string }
   | { action: 'sniff' }
   | { protocol: 'dns'; action: 'hijack-dns' }
+  | { protocol: 'ssh'; action: 'route'; outbound: string }
   | { ip_is_private: true; action: 'route'; outbound: string }
   | { ip_version: 4 | 6; action: 'route'; outbound: string }
   | { rule_set: string; action: 'route'; outbound: string }

@@ -11,6 +11,12 @@
   "service_selectors": [
     {
       "type": "selector",
+      "tag": "🔐 SSH",
+      "default": "direct",
+      "choices": ["direct", "global", "nodes"]
+    },
+    {
+      "type": "selector",
       "tag": "🤖 AI",
       "default": "global",
       "choices": ["global", "nodes", "direct"]

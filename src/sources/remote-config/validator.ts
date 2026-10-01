@@ -327,6 +327,14 @@ function isRouteRule(value: unknown): value is RouteRule {
     return true;
   }
   if (
+    hasKeys(value, ['protocol', 'action', 'outbound']) &&
+    value.protocol === 'ssh' &&
+    value.action === 'route' &&
+    isNonEmptyString(value.outbound)
+  ) {
+    return true;
+  }
+  if (
     hasKeys(value, ['ip_is_private', 'action', 'outbound']) &&
     value.ip_is_private === true &&
     value.action === 'route' &&

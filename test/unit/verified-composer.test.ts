@@ -52,6 +52,11 @@ describe('verified sing-box composer', () => {
         action: 'route',
         outbound: 'tailscale',
       });
+      expect(config.route.rules.slice(1, 4)).toEqual([
+        { action: 'sniff' },
+        { protocol: 'dns', action: 'hijack-dns' },
+        { protocol: 'ssh', action: 'route', outbound: '🔐 SSH' },
+      ]);
       expect(config.experimental?.cache_file).toEqual({ enabled: true, cache_id: 'test-cache' });
       expect(config.route.rules).toContainEqual({
         domain_suffix: ['kraken.com', 'krak.app', 'kraken.zendesk.com'],
@@ -65,6 +70,10 @@ describe('verified sing-box composer', () => {
         default: 'direct',
         outbounds: ['direct', '🚀 节点选择', 'Example node'],
       });
+      expect(config.outbounds.find((outbound) => outbound.tag === '🔐 SSH')).toMatchObject({
+        default: 'direct',
+        outbounds: ['direct', '🚀 节点选择', 'Example node'],
+      });
       expect(config.outbounds.find((outbound) => outbound.tag === '🛑 广告拦截')).toMatchObject({
         default: 'block',
       });
@@ -73,6 +82,7 @@ describe('verified sing-box composer', () => {
         outbounds: ['block', '🚀 节点选择'],
       });
       for (const tag of [
+        '🔐 SSH',
         '🤖 AI',
         '▶️ YouTube',
         '🎬 流媒体',

@@ -30,6 +30,7 @@ for (const [clientType, bundle] of bundles) {
   const selectors = current.outbounds.filter((outbound) => outbound.type === 'selector');
   const required = [
     '🚀 节点选择',
+    '🔐 SSH',
     '🤖 AI',
     '▶️ YouTube',
     '🎬 流媒体',
@@ -59,6 +60,7 @@ for (const [clientType, bundle] of bundles) {
   }
 
   const global = current.outbounds.find((outbound) => outbound.tag === '🚀 节点选择');
+  const ssh = current.outbounds.find((outbound) => outbound.tag === '🔐 SSH');
   const apple = current.outbounds.find((outbound) => outbound.tag === '🍎 苹果');
   const krakenWithoutUk = current.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
   const krakenWithUk = withUkNode.outbounds.find((outbound) => outbound.tag === '💷 Kraken/Krak');
@@ -68,10 +70,22 @@ for (const [clientType, bundle] of bundles) {
     (rule) => 'domain_suffix' in rule && rule.outbound === '💷 Kraken/Krak',
   );
   const krakenDomains = krakenRule && 'domain_suffix' in krakenRule ? krakenRule.domain_suffix : [];
+  const sshRuleIndex = current.route.rules.findIndex(
+    (rule) => 'protocol' in rule && rule.protocol === 'ssh',
+  );
   if (
     global?.type !== 'selector' ||
     !isDeepStrictEqual(global.outbounds, ['Example node']) ||
     global.default !== 'Example node' ||
+    ssh?.type !== 'selector' ||
+    ssh.default !== 'direct' ||
+    !isDeepStrictEqual(ssh.outbounds, ['direct', '🚀 节点选择', 'Example node']) ||
+    sshRuleIndex !== 3 ||
+    !isDeepStrictEqual(current.route.rules[sshRuleIndex], {
+      protocol: 'ssh',
+      action: 'route',
+      outbound: '🔐 SSH',
+    }) ||
     apple?.type !== 'selector' ||
     apple.default !== 'direct' ||
     !isDeepStrictEqual(apple.outbounds, ['direct', '🚀 节点选择', 'Example node']) ||
